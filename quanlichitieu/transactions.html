@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Giao dịch - ChiLotus</title>
+
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+
+        extend: {
+          colors: {
+            slate: { 50:'#faf8f2', 100:'#f1ede2', 200:'#ddd6c6', 300:'#c8bfa9', 400:'#988f77', 500:'#7a715c', 600:'#5f5847', 700:'#4a4437', 800:'#33302a', 900:'#22201b' },
+            gray: { 100:'#efeadd', 200:'#ddd6c6' },
+            blue: { 50:'#e9f2ec', 200:'#bcd8c6', 400:'#4a8a68', 500:'#2f7050', 600:'#24593f', 700:'#1d4934' },
+            emerald: { 50:'#ecf3ea', 200:'#cadfce', 500:'#2f7050', 600:'#24593f' },
+            rose: { 50:'#f9ebe6', 100:'#f3dcd4', 200:'#f0cdc2', 400:'#cf6b52', 500:'#bc5539', 600:'#a34428' },
+            amber: { 50:'#faf1dc', 200:'#ecdcae', 400:'#d99e33', 500:'#c4871f', 600:'#a57218' },
+            purple: { 50:'#efeaf6', 600:'#6d5a8e' }
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- style.css: style nền chung. components.css: các class dùng chung (card, btn, nav-link...) -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body class="antialiased font-sans flex flex-col md:flex-row min-h-screen relative">
+
+  <!-- Nơi hiện thông báo (toast) góc phải màn hình -->
+  <div id="toast-container" class="fixed top-20 right-4 z-50 flex flex-col gap-2"></div>
+
+  <!-- Các khối layout dùng chung, được layout.js tải và chèn vào -->
+  <div id="layout-sidebar"></div>
+  <div id="layout-bottom-nav"></div>
+
+  <div class="flex-1 md:ml-64 flex flex-col min-h-screen pb-16 md:pb-0">
+    <div id="layout-header"></div>
+
+    <!-- ====== NỘI DUNG TRANG GIAO DỊCH ====== -->
+    <main class="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full">
+
+      <!-- Bộ lọc: Lọc theo loại/danh mục (dropdown) + bật/tắt chỉ xem tháng này -->
+      <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div class="flex gap-2 w-full md:w-auto">
+          <div class="relative">
+            <button id="tx-filter-btn" type="button" class="btn btn-secondary flex-1 md:flex-none justify-center">
+              <i data-icon="filter" class="w-4 h-4"></i> Lọc
+            </button>
+            <div id="tx-filter-panel" class="hidden absolute left-0 top-full mt-2 w-64 card p-4 z-20 space-y-3 shadow-lg">
+              <div>
+                <label class="form-label-caps">Loại giao dịch</label>
+                <select id="tx-filter-type" class="form-input">
+                  <option value="">Tất cả</option>
+                  <option value="THU">Thu nhập</option>
+                  <option value="CHI">Chi tiêu</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label-caps">Danh mục</label>
+                <select id="tx-filter-category" class="form-input">
+                  <option value="">Tất cả danh mục</option>
+                </select>
+              </div>
+              <div class="flex justify-end pt-1">
+                <button id="tx-filter-clear-btn" type="button" class="text-xs text-slate-500 hover:text-rose-500 underline">Xoá lọc</button>
+              </div>
+            </div>
+          </div>
+          <button id="tx-filter-month-btn" type="button" class="btn btn-secondary flex-1 md:flex-none justify-center">
+            <i data-icon="calendar" class="w-4 h-4"></i> <span id="tx-filter-month-label">Tất cả thời gian</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Danh sách toàn bộ giao dịch (cả thu lẫn chi), main.js đổ dữ liệu vào -->
+      <div class="card overflow-hidden">
+        <!-- Bảng cho màn hình lớn -->
+        <div class="hidden md:block overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50/50">
+                <th class="table-head-cell">Giao dịch</th>
+                <th class="table-head-cell">Danh mục</th>
+                <th class="table-head-cell">Ngày</th>
+                <th class="table-head-cell text-right">Số tiền</th>
+                <th class="table-head-cell text-right"></th>
+              </tr>
+            </thead>
+            <tbody id="tx-table-body" class="divide-y divide-gray-100">
+              <!-- Dữ liệu được đổ từ API -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Danh sách dạng thẻ cho mobile -->
+        <div id="tx-mobile-list" class="md:hidden flex flex-col divide-y divide-gray-100">
+          <!-- Dữ liệu được đổ từ API -->
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <div id="layout-modal"></div>
+  <div id="layout-chatbot"></div>
+
+  <script src="js/api.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

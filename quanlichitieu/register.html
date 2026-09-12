@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng ký - ChiLotus</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              slate: {
+                50: "#faf8f2",
+                100: "#f1ede2",
+                200: "#ddd6c6",
+                300: "#c8bfa9",
+                400: "#988f77",
+                500: "#7a715c",
+                600: "#5f5847",
+                700: "#4a4437",
+                800: "#33302a",
+                900: "#22201b",
+              },
+              gray: { 100: "#efeadd", 200: "#ddd6c6" },
+              blue: {
+                50: "#e9f2ec",
+                200: "#bcd8c6",
+                400: "#4a8a68",
+                500: "#2f7050",
+                600: "#24593f",
+                700: "#1d4934",
+              },
+              emerald: {
+                50: "#ecf3ea",
+                200: "#cadfce",
+                500: "#2f7050",
+                600: "#24593f",
+              },
+              rose: {
+                50: "#f9ebe6",
+                100: "#f3dcd4",
+                200: "#f0cdc2",
+                400: "#cf6b52",
+                500: "#bc5539",
+                600: "#a34428",
+              },
+              amber: {
+                50: "#faf1dc",
+                200: "#ecdcae",
+                400: "#d99e33",
+                500: "#c4871f",
+                600: "#a57218",
+              },
+              purple: { 50: "#efeaf6", 600: "#6d5a8e" },
+            },
+          },
+        },
+      };
+    </script>
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/components.css" />
+  </head>
+  <body
+    class="antialiased font-sans bg-slate-50 flex items-center justify-center min-h-screen p-4"
+  >
+    <!-- Khung đăng ký -->
+    <div class="card p-8 w-full max-w-md">
+      <!-- Logo -->
+      <div class="flex justify-center mb-6">
+        <div
+          class="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center text-white"
+        >
+          <i data-icon="wallet-cards" class="w-6 h-6"></i>
+        </div>
+      </div>
+      <h1 class="text-2xl font-bold text-slate-900 text-center mb-2">
+        Đăng ký ChiLotus
+      </h1>
+      <p class="text-sm text-slate-500 text-center mb-8">
+        Tạo tài khoản mới để quản lý chi tiêu
+      </p>
+
+      <!-- Ô báo lỗi, ẩn mặc định -->
+      <div
+        id="error-msg"
+        class="hidden mb-4 p-3 bg-rose-50 text-rose-600 text-sm rounded-lg border border-rose-100"
+      ></div>
+
+      <!-- Form đăng ký -->
+      <form id="register-form" class="space-y-4">
+        <div>
+          <label class="form-label">Họ và tên</label>
+          <input
+            type="text"
+            id="name"
+            required
+            class="form-input bg-slate-50"
+            placeholder="Nguyễn Văn A"
+          />
+        </div>
+        <div>
+          <label class="form-label">Email</label>
+          <input
+            type="email"
+            id="email"
+            required
+            class="form-input bg-slate-50"
+            placeholder="user@example.com"
+          />
+        </div>
+        <div>
+          <label class="form-label">Mật khẩu</label>
+          <input
+            type="password"
+            id="password"
+            required
+            class="form-input bg-slate-50"
+            placeholder="Ít nhất 6 ký tự"
+          />
+        </div>
+        <button type="submit" class="btn btn-primary w-full mt-2">
+          Đăng ký
+        </button>
+      </form>
+
+      <div class="mt-6 text-center">
+        <a href="login.html" class="text-sm text-blue-600 hover:underline"
+          >Đã có tài khoản? Đăng nhập</a
+        >
+      </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/icons.js"></script>
+    <script>
+      const registerForm = document.getElementById("register-form");
+      const errorMsg = document.getElementById("error-msg");
+
+      // Xử lý khi bấm nút Đăng ký
+      registerForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const name = document.getElementById("name").value;
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+
+        try {
+          errorMsg.classList.add("hidden");
+          const data = await apiRegister(name, email, password);
+          // Backend trả về { token, user } và đã đăng nhập thành công
+          localStorage.setItem("token", data.token);
+          localStorage.setItem("user", JSON.stringify(data.user));
+          alert("Đăng ký thành công!");
+          window.location.href = "index.html";
+        } catch (error) {
+          errorMsg.textContent = error.message;
+          errorMsg.classList.remove("hidden");
+        }
+      });
+    </script>
+  </body>
+</html>

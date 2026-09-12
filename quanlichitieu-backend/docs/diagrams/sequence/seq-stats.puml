@@ -1,0 +1,59 @@
+@startuml Seq_Thong_ke_bao_cao
+!theme plain
+title SEQUENCE - THỐNG KÊ & BÁO CÁO (Dashboard + Reports)
+
+skinparam responseMessageBelowArrow true
+
+actor "Người dùng" as U
+participant "Frontend\nindex/reports.html" as FE
+participant "verifyToken" as MW
+participant "stats.controller" as C
+database "PostgreSQL\n(Prisma)" as DB
+
+== Tổng quan Dashboard ==
+U -> FE : mở trang chủ
+FE -> MW : GET /api/stats/summary
+MW -> C : getSummary()
+C -> C : tính [start,end) tháng hiện tại
+
+C -> DB : aggregate THU (_sum amount)\naggregate CHI (_sum amount)\naggregate SavingsGoal (_sum currentAmount)\naggregate thu/chi trong tháng\ncount transactions
+DB --> C : các tổng số
+
+C -> C : balance = totalIncome - totalExpense
+C --> FE : 200 {balance, totalIncome,\ntotalExpense, totalSavings,\nmonthIncome, monthExpense,...}
+
+== Xu hướng 6 tháng (biểu đồ cột Reports) ==
+FE -> MW : GET /api/stats/monthly?months=6
+MW -> C : getMonthlyTrend()
+C -> C : tạo 6 bucket 'YYYY-MM' liên tiếp\n(cũ → mới)
+C -> DB : findMany({date ∈ [bucket đầu, cuối)},\nselect amount/type/date)
+DB --> C : giao dịch trong 6 tháng
+loop từng giao dịch tx
+  C -> C : bucket = monthKey(tx.date)\nthu += (type=THU)? amount : 0\nchi += (type=CHI)? amount : 0
+end
+C --> FE : 200 [{month:'2026-03',thu,chi}, ...]\n→ vẽ Chart.js bar chart
+
+== Chi tiêu theo danh mục (biểu đồ tròn) ==
+FE -> MW : GET /api/stats/categories?type=CHI[&month|from/to]
+MW -> C : getCategoryBreakdown()
+C -> DB : groupBy({by:['category'], _sum:{amount},\norderBy _sum desc})
+DB --> C : [{category, total}]
+C -> C : total chung → percentage\n= round(total_i / total * 1000)/10
+C --> FE : 200 [{category,total,percentage}]\n→ doughnut chart + legend %
+
+== Chuỗi theo ngày (line chart 7/30 ngày) ==
+FE -> MW : GET /api/stats/trend?days=7|30
+MW -> C : getDailyTrend()
+C -> C : tạo N bucket ngày UTC (đều 0)\n[1..365]
+C -> DB : findMany({date ∈ khoảng})
+DB --> C : giao dịch
+C -> C : đổ amount vào bucket theo dayKey
+C --> FE : 200 [{date:'YYYY-MM-DD',thu,chi}]\n→ line chart
+
+note over FE
+  Frontend cũng có luồng tự tính từ GET /api/transactions
+  (buildFinanceSummaryText + aggregation trong main.js);
+  nhóm endpoint /api/stats giúp có số liệu chuẩn hoá,
+  nhanh hơn khi dữ liệu lớn và tái sử dụng cho AI.
+end note
+@enduml

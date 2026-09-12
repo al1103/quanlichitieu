@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - ChiLotus</title>
+
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+
+        extend: {
+          colors: {
+            slate: { 50:'#faf8f2', 100:'#f1ede2', 200:'#ddd6c6', 300:'#c8bfa9', 400:'#988f77', 500:'#7a715c', 600:'#5f5847', 700:'#4a4437', 800:'#33302a', 900:'#22201b' },
+            gray: { 100:'#efeadd', 200:'#ddd6c6' },
+            blue: { 50:'#e9f2ec', 200:'#bcd8c6', 400:'#4a8a68', 500:'#2f7050', 600:'#24593f', 700:'#1d4934' },
+            emerald: { 50:'#ecf3ea', 200:'#cadfce', 500:'#2f7050', 600:'#24593f' },
+            rose: { 50:'#f9ebe6', 100:'#f3dcd4', 200:'#f0cdc2', 400:'#cf6b52', 500:'#bc5539', 600:'#a34428' },
+            amber: { 50:'#faf1dc', 200:'#ecdcae', 400:'#d99e33', 500:'#c4871f', 600:'#a57218' },
+            purple: { 50:'#efeaf6', 600:'#6d5a8e' }
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- style.css: style nền chung. components.css: các class dùng chung (card, btn, nav-link...) -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body class="antialiased font-sans flex flex-col md:flex-row min-h-screen relative">
+
+  <!-- Nơi hiện thông báo (toast) góc phải màn hình -->
+  <div id="toast-container" class="fixed top-20 right-4 z-50 flex flex-col gap-2"></div>
+
+  <!-- Các khối layout dùng chung (sidebar, header, bottom nav, modal), được layout.js tải và chèn vào -->
+  <div id="layout-sidebar"></div>
+  <div id="layout-bottom-nav"></div>
+
+  <div class="flex-1 md:ml-64 flex flex-col min-h-screen pb-16 md:pb-0">
+    <div id="layout-header"></div>
+
+    <!-- ====== NỘI DUNG TRANG TỔNG QUAN (DASHBOARD) ====== -->
+    <main class="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full">
+
+      <!-- Lời chào -->
+      <div class="mb-8">
+          <h2 id="dashboard-greeting" class="text-2xl font-bold text-slate-900 mb-1">Xin chào</h2>
+        <p class="text-sm text-slate-500">Đây là tình hình tài chính của bạn trong tháng này.</p>
+      </div>
+
+      <!-- 4 thẻ số liệu tổng quan: Số dư / Thu nhập / Chi tiêu / Tiết kiệm -->
+      <div class="flex overflow-x-auto hide-scrollbar gap-4 md:grid md:grid-cols-4 md:gap-6 mb-8 pb-2 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0">
+        <!-- Số dư hiện tại -->
+        <div class="card min-w-[240px] md:min-w-0 p-5">
+          <div class="flex justify-between items-start mb-3">
+            <div class="stat-icon stat-icon-blue">
+              <i data-icon="wallet" class="w-5 h-5"></i>
+            </div>
+            <span class="badge badge-up">
+              <i data-icon="trending-up" class="w-3 h-3"></i> 12.5%
+            </span>
+          </div>
+          <p class="text-sm font-medium text-slate-500 mb-1">Số dư hiện tại</p>
+          <h3 id="stat-balance" class="text-2xl font-bold text-slate-900">...</h3>
+        </div>
+
+        <!-- Tổng thu nhập -->
+        <div class="card min-w-[240px] md:min-w-0 p-5">
+          <div class="flex justify-between items-start mb-3">
+            <div class="stat-icon stat-icon-emerald">
+              <i data-icon="arrow-down-left" class="w-5 h-5"></i>
+            </div>
+            <span class="badge badge-up">
+              <i data-icon="trending-up" class="w-3 h-3"></i> 8.2%
+            </span>
+          </div>
+          <p class="text-sm font-medium text-slate-500 mb-1">Tổng thu nhập</p>
+          <h3 id="stat-income" class="text-2xl font-bold text-slate-900">...</h3>
+        </div>
+
+        <!-- Tổng chi tiêu -->
+        <div class="card min-w-[240px] md:min-w-0 p-5">
+          <div class="flex justify-between items-start mb-3">
+            <div class="stat-icon stat-icon-rose">
+              <i data-icon="arrow-up-right" class="w-5 h-5"></i>
+            </div>
+            <span class="badge badge-down">
+              <i data-icon="trending-down" class="w-3 h-3"></i> 2.4%
+            </span>
+          </div>
+          <p class="text-sm font-medium text-slate-500 mb-1">Tổng chi tiêu</p>
+          <h3 id="stat-expense" class="text-2xl font-bold text-slate-900">...</h3>
+        </div>
+
+        <!-- Tiết kiệm -->
+        <div class="card min-w-[240px] md:min-w-0 p-5">
+          <div class="flex justify-between items-start mb-3">
+            <div class="stat-icon stat-icon-purple">
+              <i data-icon="piggy-bank" class="w-5 h-5"></i>
+            </div>
+          </div>
+          <p class="text-sm font-medium text-slate-500 mb-1">Tiết kiệm</p>
+          <h3 id="stat-savings" class="text-2xl font-bold text-slate-900">...</h3>
+        </div>
+      </div>
+
+      <!-- Khu vực biểu đồ: xu hướng chi tiêu + chi tiêu theo danh mục -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <!-- Biểu đồ đường -->
+        <div class="card lg:col-span-2 p-5 md:p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h3 class="text-base font-semibold text-slate-900">Tổng quan chi tiêu</h3>
+            <select id="trend-period" class="text-sm border border-gray-200 bg-slate-50 rounded-lg px-2 py-1 focus:outline-none focus:border-blue-500 text-slate-600">
+              <option value="7">7 ngày qua</option>
+              <option value="30" selected>30 ngày qua</option>
+              <option value="6m">6 tháng</option>
+            </select>
+          </div>
+          <div class="h-64 w-full relative">
+            <canvas id="lineChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Biểu đồ tròn -->
+        <div class="card p-5 md:p-6 flex flex-col">
+          <h3 class="text-base font-semibold text-slate-900 mb-6">Chi tiêu theo danh mục</h3>
+          <div class="h-48 w-full relative mb-4 flex-1">
+            <canvas id="donutChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Danh sách giao dịch gần đây, main.js đổ dữ liệu từ API vào -->
+      <div class="card overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
+          <h3 class="text-base font-semibold text-slate-900">Giao dịch gần đây</h3>
+          <a href="transactions.html" class="text-sm font-medium text-blue-600 hover:text-blue-700">Xem tất cả</a>
+        </div>
+
+        <!-- Bảng cho màn hình lớn -->
+        <div class="hidden md:block overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr>
+                <th class="table-head-cell bg-slate-50 rounded-tl-lg">Giao dịch</th>
+                <th class="table-head-cell bg-slate-50">Danh mục</th>
+                <th class="table-head-cell bg-slate-50">Ngày</th>
+                <th class="table-head-cell bg-slate-50 text-right rounded-tr-lg">Số tiền</th>
+              </tr>
+            </thead>
+            <tbody id="tx-table-body" class="divide-y divide-gray-100">
+              <!-- Dữ liệu được đổ từ API -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Danh sách dạng thẻ cho mobile -->
+        <div id="tx-mobile-list" class="md:hidden flex flex-col divide-y divide-gray-100">
+          <!-- Dữ liệu được đổ từ API -->
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <div id="layout-modal"></div>
+  <div id="layout-chatbot"></div>
+
+  <script src="js/api.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

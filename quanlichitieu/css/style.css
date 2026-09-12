@@ -1,0 +1,36 @@
+/* ============================================================
+   ChiLotus — style nền chung
+   Cảm hứng: sổ chi tiêu giấy — nền giấy ấm, mực đậm, chấm li ti
+   ============================================================ */
+
+body {
+    background-color: #f6f1e5;
+    /* Hoạ tiết chấm nhỏ như giấy vở */
+    background-image: radial-gradient(rgba(120, 100, 60, 0.055) 1px, transparent 1px);
+    background-size: 22px 22px;
+    color: #33302a;
+}
+
+::selection {
+    background: #e9f2ec;
+    color: #1d4934;
+}
+
+/* Utilities */
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Animations */
+@keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to   { transform: translateX(0); opacity: 1; }
+}
+
+.toast-enter {
+    animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

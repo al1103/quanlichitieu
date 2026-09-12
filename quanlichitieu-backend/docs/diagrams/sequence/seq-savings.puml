@@ -1,0 +1,63 @@
+@startuml Seq_Tiet_kiem
+!theme plain
+title SEQUENCE - MỤC TIÊU TIẾT KIỆM (+ ĐÓNG GÓP TỰ HOÀN THÀNH)
+
+skinparam responseMessageBelowArrow true
+
+actor "Người dùng" as U
+participant "Frontend\nsavings.html" as FE
+participant "verifyToken" as MW
+participant "saving.controller" as C
+database "PostgreSQL\n(Prisma)" as DB
+
+== Tạo mục tiêu ==
+U -> FE : tên mục tiêu, số tiền mục tiêu,\nhạn chót, đóng góp/tháng
+FE -> MW : POST /api/savings\n{name, targetAmount, deadline,\nmonthlyContribution}
+MW -> C : createSavingsGoal()
+C -> C : validate name != rỗng,\ntargetAmount > 0, deadline hợp lệ
+
+alt Sai dữ liệu
+  C --> FE : 400 {error}
+else Hợp lệ
+  C -> DB : savingsGoal.create({currentAmount: 0,\nstatus: 'IN_PROGRESS'})
+  C --> FE : 201 {goal + percentComplete = 0%}
+end
+
+== Đóng góp tiền (deposit) — luồng chính ==
+U -> FE : bấm "Đóng góp", nhập số tiền
+FE -> MW : POST /api/savings/:id/deposit\n{amount}
+MW -> C : depositToGoal()
+C -> C : validate amount > 0
+C -> DB : findFirst({id, userId})
+
+alt Không phải mục tiêu của mình
+  C --> FE : 404 {error}
+else OK
+  C -> DB : update({currentAmount:\n{increment: amount}})
+  DB --> C : goal sau cộng tiền
+
+  alt currentAmount >= targetAmount
+    C -> DB : update({status: 'COMPLETED'})
+    note right: TỘNG đủ mục tiêu →\ntự động đánh dấu hoàn tất
+  end
+
+  C --> FE : 200 {message, goal:\n+ percentComplete (chặn tối đa 100%)}
+  FE --> U : cập nhật thanh tiến độ
+end
+
+== Sửa thông tin mục tiêu ==
+FE -> MW : PUT /api/savings/:id\n{name?, targetAmount?, deadline?, status?}
+MW -> C : updateSavingsGoal()
+C -> DB : findFirst({id, userId}) → update()
+C -> C : nếu currentAmount >= targetAmount\nvà status != COMPLETED\n→ tự set COMPLETED
+C --> FE : 200 {goal}
+
+== Danh sách & Xoá ==
+FE -> MW : GET /api/savings
+MW -> C : getSavingsGoals()\norderBy IN_PROGRESS trước
+C -> DB : findMany({userId})
+C --> FE : 200 [goal...] mỗi goal kèm percentComplete
+
+FE -> MW : DELETE /api/savings/:id
+MW -> C : deleteSavingsGoal()\ndeleteMany({id, userId}) → 200 | 404
+@enduml

@@ -1,0 +1,30 @@
+<!-- Thanh header trên cùng của mỗi trang -->
+<header class="h-16 bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-30 flex justify-between items-center px-4 md:px-8">
+
+  <!-- Tiêu đề trang: layout.js sẽ tự điền theo thẻ <title> của từng trang -->
+  <h1 id="header-page-title" class="text-lg md:text-xl font-semibold text-slate-900">Dashboard</h1>
+
+  <div class="flex items-center gap-3 md:gap-5">
+    <!-- Nút thêm giao dịch (chỉ hiện trên máy tính, mobile đã có nút tròn riêng) -->
+    <button class="add-tx-btn btn btn-dark hidden md:flex">
+      <i data-icon="plus" class="w-4 h-4"></i>
+      <span>Thêm giao dịch</span>
+    </button>
+
+    <!-- Chuông thông báo: cảnh báo vượt/sắp vượt ngân sách + mục tiêu tiết kiệm hoàn thành -->
+    <div class="relative">
+      <button id="notif-bell-btn" type="button" class="relative p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors">
+        <i data-icon="bell" class="w-5 h-5"></i>
+        <span id="notif-dot" class="hidden absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
+      </button>
+      <div id="notif-panel" class="hidden absolute right-0 top-full mt-2 w-80 max-w-[90vw] card p-0 z-30 shadow-lg overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-100">
+          <h3 class="text-sm font-semibold text-slate-900">Thông báo</h3>
+        </div>
+        <div id="notif-list" class="max-h-80 overflow-y-auto divide-y divide-gray-100">
+          <!-- main.js đổ danh sách cảnh báo vào đây -->
+        </div>
+      </div>
+    </div>
+  </div>
+</header>

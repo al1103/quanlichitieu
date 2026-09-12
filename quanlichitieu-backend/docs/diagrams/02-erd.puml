@@ -1,0 +1,109 @@
+@startuml ERD_MoneyTrack
+!theme plain
+title SƠ ĐỒ ERD - CƠ SỞ DỮ LIỆU MONEYTRACK (MongoDB qua Prisma)
+
+hide circle
+skinparam linetype ortho
+
+entity "users (Người dùng)" as users {
+  * **_id** : ObjectId <<PK>>
+  --
+  * email : STRING <<unique, not null>>
+  * password : STRING <<bcrypt hash>>
+  name : STRING
+  bio : STRING
+  avatar : STRING
+  * role : STRING = 'USER' | 'ADMIN'
+  * status : STRING = 'ACTIVE' | 'BLOCKED'
+  * plan : STRING = 'FREE' | 'PREMIUM' <<Premium mới dùng AI>>
+  * wallet_balance : DOUBLE = 0 <<Ví nạp tiền mua gói>>
+  * created_at : DATETIME
+  * updated_at : DATETIME
+}
+
+entity "wallet_logs (Lịch sử ví tiền)" as walletlogs {
+  * **_id** : ObjectId <<PK>>
+  --
+  * user_id : ObjectId <<FK -> users._id>>
+  * type : STRING = 'DEPOSIT' | 'PAY_PREMIUM'
+  * amount : DOUBLE > 0
+  * balance_after : DOUBLE
+  note : STRING
+  * created_at : DATETIME
+}
+
+entity "transactions (Giao dịch)" as transactions {
+  * **_id** : ObjectId <<PK>>
+  --
+  * user_id : ObjectId <<FK -> users._id>>
+  * amount : DOUBLE > 0
+  * type : STRING = 'THU' | 'CHI'
+  * category : STRING
+  description : STRING
+  * date : DATETIME
+  * created_at : DATETIME
+  latitude : DOUBLE <<tuỳ chọn>>
+  longitude : DOUBLE <<tuỳ chọn>>
+}
+
+entity "budgets (Ngân sách)" as budgets {
+  * **_id** : ObjectId <<PK>>
+  --
+  * user_id : ObjectId <<FK -> users._id>>
+  * category : STRING
+  * limit_amount : DOUBLE
+  * month : STRING = 'YYYY-MM'
+  * created_at / updated_at : DATETIME
+  <<unique (user_id, category, month)>>
+}
+
+entity "savings_goals (Mục tiêu tiết kiệm)" as savings {
+  * **_id** : ObjectId <<PK>>
+  --
+  * user_id : ObjectId <<FK -> users._id>>
+  * name : STRING
+  * target_amount : DOUBLE
+  * current_amount : DOUBLE = 0
+  monthly_contribution : DOUBLE
+  deadline : DATETIME
+  * status : STRING = 'IN_PROGRESS' | 'COMPLETED'
+  * created_at / updated_at : DATETIME
+}
+
+entity "categories (Danh mục hệ thống)" as categories {
+  * **_id** : ObjectId <<PK>>
+  --
+  * name : STRING <<unique>>
+  * icon : STRING = 'more-horizontal'
+  * color : STRING = '#64748b'
+  * type : STRING = 'CHI' | 'THU' | 'BOTH'
+}
+
+entity "ai_logs (Nhật ký AI)" as ailogs {
+  * **_id** : ObjectId <<PK>>
+  --
+  user_id : ObjectId <<FK nullable -> users._id>>
+  * endpoint : STRING = 'ai-insights' | 'ai-chat'
+  * model : STRING
+  * tokens : INT
+  * cost_estimate : DOUBLE
+  * created_at : DATETIME
+}
+
+entity "app_settings (Cấu hình hệ thống)" as settings {
+  * **_id (key)** : STRING <<PK>>
+  --
+  * value : STRING
+}
+
+' ===== QUAN HỆ =====
+users ||--o{ transactions : "1 người dùng có N giao dịch"
+users ||--o{ budgets : "1 người dùng có N ngân sách"
+users ||--o{ savings : "1 người dùng có N mục tiêu"
+users ||--o{ ailogs : "1 người dùng có N log AI"
+users ||--o{ walletlogs : "1 người dùng có N biến động ví"
+
+transactions }o..|| categories : "category (chuỗi,\ntham chiếu logic theo tên)"
+budgets }o..|| categories : "category (chuỗi,\ntham chiếu logic theo tên)"
+
+@enduml

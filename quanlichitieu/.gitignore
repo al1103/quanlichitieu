@@ -1,0 +1,4 @@
+# Chứa API key thật, không được chia sẻ hay đưa lên Git
+server/config.js
+
+node_modules/

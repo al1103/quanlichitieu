@@ -1,0 +1,69 @@
+<!-- Popup thêm giao dịch mới (ẩn mặc định, main.js sẽ mở/đóng bằng JS) -->
+<div id="tx-modal" class="fixed inset-0 z-50 hidden">
+
+  <!-- Lớp nền mờ phía sau, bấm vào để đóng popup -->
+  <div id="tx-backdrop" class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm opacity-0 transition-opacity duration-300"></div>
+
+  <div class="absolute inset-0 flex items-center justify-center p-4">
+    <div id="tx-card" class="card bg-white w-full max-w-lg rounded-2xl shadow-xl transform scale-95 opacity-0 transition-all duration-300 flex flex-col max-h-full">
+
+      <!-- Tiêu đề popup -->
+      <div class="flex justify-between items-center p-5 border-b border-gray-100">
+        <h2 class="text-lg font-semibold text-slate-900">Thêm giao dịch mới</h2>
+        <button class="close-modal-btn p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md transition-colors">
+          <i data-icon="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Nội dung form nhập giao dịch -->
+      <div class="p-5 overflow-y-auto space-y-5">
+
+        <!-- Chọn loại: Chi tiêu hay Thu nhập -->
+        <div class="flex bg-slate-100 p-1 rounded-lg">
+          <button id="tx-type-chi" class="flex-1 py-1.5 bg-white shadow-sm rounded-md text-sm font-medium text-rose-600">Chi tiêu</button>
+          <button id="tx-type-thu" class="flex-1 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-700">Thu nhập</button>
+        </div>
+
+        <!-- Số tiền -->
+        <div>
+          <label class="form-label-caps">Số tiền</label>
+          <div class="relative">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">₫</span>
+            <input type="number" id="tx-amount" placeholder="0" class="form-input pl-8 text-lg font-semibold py-2.5" />
+          </div>
+        </div>
+
+        <!-- Danh mục + Ngày -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="form-label-caps">Danh mục</label>
+            <select id="tx-category" class="form-input appearance-none">
+              <option value="Ăn uống">Ăn uống</option>
+              <option value="Mua sắm">Mua sắm</option>
+              <option value="Di chuyển">Di chuyển</option>
+              <option value="Giải trí">Giải trí</option>
+              <option value="Lương">Lương</option>
+              <option value="Khác">Khác</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label-caps">Ngày</label>
+            <input type="date" id="tx-date" class="form-input" />
+          </div>
+        </div>
+
+        <!-- Mô tả thêm -->
+        <div>
+          <label class="form-label-caps">Mô tả</label>
+          <textarea id="tx-desc" placeholder="Nhập mô tả giao dịch..." rows="2" class="form-input resize-none"></textarea>
+        </div>
+      </div>
+
+      <!-- Nút Hủy / Lưu -->
+      <div class="p-5 border-t border-gray-100 flex justify-end gap-3 bg-slate-50 rounded-b-2xl">
+        <button class="close-modal-btn btn btn-secondary">Hủy</button>
+        <button id="save-tx-btn" class="btn btn-primary">Lưu giao dịch</button>
+      </div>
+    </div>
+  </div>
+</div>

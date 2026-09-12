@@ -1,0 +1,78 @@
+<!-- Sidebar (chỉ hiện trên máy tính, ẩn trên mobile) -->
+<aside class="hidden md:flex flex-col w-64 h-screen fixed left-0 top-0 bg-white border-r border-gray-200 z-40">
+
+  <!-- Logo + tên app -->
+  <div class="h-16 flex items-center px-6 border-b border-gray-100">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white">
+        <i data-icon="wallet-cards" class="w-5 h-5"></i>
+      </div>
+      <span class="font-bold text-lg tracking-tight">ChiLotus</span>
+    </div>
+  </div>
+
+  <!-- Danh sách menu chính -->
+  <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+    <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-3">Menu</div>
+
+    <a href="index.html" class="nav-link">
+      <i data-icon="layout-dashboard" class="w-5 h-5"></i>
+      <span>Tổng quan</span>
+    </a>
+    <a href="transactions.html" class="nav-link">
+      <i data-icon="receipt-text" class="w-5 h-5"></i>
+      <span>Giao dịch</span>
+    </a>
+    <a href="income.html" class="nav-link">
+      <i data-icon="arrow-down-left" class="w-5 h-5"></i>
+      <span>Thu nhập</span>
+    </a>
+    <a href="expense.html" class="nav-link">
+      <i data-icon="arrow-up-right" class="w-5 h-5"></i>
+      <span>Chi tiêu</span>
+    </a>
+    <a href="budget.html" class="nav-link">
+      <i data-icon="wallet" class="w-5 h-5"></i>
+      <span>Ngân sách</span>
+    </a>
+    <a href="fixed-expenses.html" class="nav-link">
+      <i data-icon="repeat" class="w-5 h-5"></i>
+      <span>Chi cố định</span>
+    </a>
+    <a href="savings.html" class="nav-link">
+      <i data-icon="piggy-bank" class="w-5 h-5"></i>
+      <span>Tiết kiệm</span>
+    </a>
+    <a href="reports.html" class="nav-link">
+      <i data-icon="pie-chart" class="w-5 h-5"></i>
+      <span>Thống kê & báo cáo</span>
+    </a>
+    <a href="search.html" class="nav-link">
+      <i data-icon="search" class="w-5 h-5"></i>
+      <span>Tìm kiếm</span>
+    </a>
+    <a href="settings.html" class="nav-link">
+      <i data-icon="user" class="w-5 h-5"></i>
+      <span>Cài đặt tài khoản</span>
+    </a>
+    <a href="admin.html" id="nav-admin-link" class="nav-link hidden">
+      <i data-icon="shield-check" class="w-5 h-5"></i>
+      <span>Quản trị hệ thống</span>
+    </a>
+  </nav>
+
+  <!-- Thông tin người dùng ở cuối sidebar -->
+  <div class="p-4 border-t border-gray-100 flex items-center gap-1">
+    <a href="settings.html" class="flex-1 min-w-0 flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors group">
+      <img src="https://i.pravatar.cc/150?img=11" alt="Avatar" class="w-9 h-9 rounded-full object-cover border border-gray-200" />
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-medium text-slate-900 truncate">Nguyễn Văn An</p>
+        <p id="sidebar-user-email" class="text-xs text-slate-500 truncate group-hover:text-blue-600">Cài đặt tài khoản</p>
+      </div>
+      <i data-icon="chevrons-up-down" class="w-4 h-4 text-slate-400"></i>
+    </a>
+    <button id="logout-btn" title="Đăng xuất" class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors">
+      <i data-icon="log-out" class="w-4 h-4"></i>
+    </button>
+  </div>
+</aside>

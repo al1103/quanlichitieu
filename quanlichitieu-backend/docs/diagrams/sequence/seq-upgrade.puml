@@ -1,0 +1,66 @@
+@startuml Seq_Nap_tien_Nang_cap
+!theme plain
+title SEQUENCE - NẠP TIỀN VÀO VÍ -> TỰ ĐỘNG NÂNG CẤP GÓI PREMIUM (mở khoá AI)
+
+skinparam responseMessageBelowArrow true
+
+actor "Người dùng" as U
+participant "Frontend\nupgrade.html / chatbot.html" as FE
+participant "verifyToken" as MW
+participant "auth.controller" as C
+database "PostgreSQL\n(Prisma)" as DB
+participant "AI endpoints\n/api/ai-*" as AI
+
+== Xem ví & bảng giá ==
+U -> FE : mở trang "Nâng cấp gói"
+FE -> MW : GET /api/auth/wallet
+MW -> C : getWallet()
+C --> FE : 200 {balance, plan,\npremiumPrice: 99000, logs[20]}
+FE --> U : badge gói hiện tại + số dư ví
+
+== Bước 1: Nạp tiền vào ví (cổng thanh toán mô phỏng) ==
+U -> FE : nhập số tiền (VD 100.000₫)\nhoặc bấm chip +100K -> Nạp tiền
+FE -> MW : POST /api/auth/wallet/deposit\n{amount}
+MW -> C : depositWallet()
+C -> C : validate amount > 0\nvà <= 100.000.000
+
+alt Sai dữ liệu
+  C --> FE : 400 {error}
+else Hợp lệ
+  C -> DB : user.update({walletBalance:\n{increment: amount}}) «nguyên tử»
+  C -> DB : walletLog.create({type:'DEPOSIT',\namount, balanceAfter,\nnote:'Nạp tiền (mô phỏng)'})
+  C --> FE : 201 {message, balance}
+  FE --> U : toast + cập nhật số dư + lịch sử ví
+end
+
+== Bước 2: Mua gói -> TỰ ĐỘNG NÂNG CẤP ==
+U -> FE : bấm "Nâng cấp Premium ngay"
+FE -> MW : POST /api/auth/upgrade
+MW -> C : upgradePlan()
+
+alt Đã là Premium
+  C --> FE : 400 "Bạn đã đang dùng gói Premium."
+else Ví KHÔNG đủ 99.000₫
+  C --> FE : 400 {code:'INSUFFICIENT_BALANCE',\nerror:"...nạp thêm X₫"}
+  FE --> U : toast nhắc nạp thêm
+else Ví đủ tiền — LUỒNG CHÍNH
+  C -> DB : $transaction {\n  user.update({plan:'PREMIUM',\n    walletBalance:{decrement:99000}})\n  walletLog.create({type:'PAY_PREMIUM',\n    amount:99000, balanceAfter})\n}
+  note right: Trừ tiền + bật gói + ghi sổ\ntrong 1 transaction:\nlỗi giữa chừng = rollback toàn bộ
+  C --> FE : 200 {plan:'PREMIUM', balance,\nuser}
+  FE -> FE : localStorage.user.plan = 'PREMIUM'\n+ sidebar đổi nhãn "Premium Plan"
+  FE --> U : "Chúc mừng! AI đã được mở khoá!"
+end
+
+== Hệ quả: AI được mở khoá ==
+U -> FE : bấm "Phân tích chi tiêu" / chatbot
+FE -> AI : POST /api/ai-insights {summary}
+AI -> AI : user.plan == 'PREMIUM' ? OK\n: 403 {code:'PLAN_REQUIRED'}
+AI --> FE : 200 {insight} / {reply}
+
+== Huỷ gói (tuỳ chọn) ==
+U -> FE : bấm "Huỷ gói Premium"
+FE -> MW : POST /api/auth/downgrade
+C -> DB : user.update({plan:'FREE'})\n(không hoàn tiền, ví giữ nguyên)
+C --> FE : 200 {plan:'FREE'}
+note over U, AI: Từ đây gọi AI lại bị 403 PLAN_REQUIRED;\nnút nâng cấp trên FE hiện lại như ban đầu.
+@enduml

@@ -1,0 +1,63 @@
+@startuml Seq_Giao_dich
+!theme plain
+title SEQUENCE - QUẢN LÝ GIAO DỊCH (Thêm / Xem / Lọc / Sửa / Xoá)
+
+skinparam responseMessageBelowArrow true
+
+actor "Người dùng" as U
+participant "Frontend\nmodal.html / main.js" as FE
+participant "verifyToken" as MW
+participant "transaction.controller" as C
+database "MongoDB\n(Prisma)" as DB
+
+== Thêm giao dịch (kể cả có toạ độ GPS) ==
+U -> FE : điền số tiền, loại THU/CHI,\ndanh mục, mô tả, ngày → Lưu
+FE -> MW : POST /api/transactions\n{amount,type,category,description,date\n[,latitude,longitude]}
+MW -> MW : xác thực JWT → req.userId
+MW -> C : createTransaction()
+C -> C : parseTxFields():\namount > 0? type hợp lệ? category?
+
+alt Dữ liệu không hợp lệ
+  C --> FE : 400 {error: "..."} (không ghi DB)
+end
+
+C -> C : parseCoords(): lat ∈ [-90,90],\nlng ∈ [-180,180]
+C -> DB : transaction.create({..., [latitude, longitude]})
+DB --> C : giao dịch vừa tạo
+C --> FE : 201 {id, amount, type, ...}
+FE -> FE : tải lại danh sách + toast OK
+
+== Xem danh sách + bộ lọc ==
+FE -> MW : GET /api/transactions?type=CHI\n&month=2026-08&q=burger&from=&to=
+MW -> C : getTransactions()
+C -> C : dựng where = {userId,\n[type], [category], OR(q), date range}
+C -> DB : findMany({where,\norderBy date desc, take ≤ 1000})
+DB --> C : mảng giao dịch
+C --> FE : 200 [ {...}, ... ] (mới nhất trước)
+
+== Sửa giao dịch ==
+FE -> MW : PUT /api/transactions/:id
+MW -> C : updateTransaction()
+C -> DB : findFirst({id, userId})
+alt Không phải của mình / không tồn tại
+  C --> FE : 404 {error}
+else OK
+  C -> DB : transaction.update({..., [latitude, longitude]})
+  C --> FE : 200 {giao dịch mới}
+end
+
+== Xoá giao dịch ==
+FE -> MW : DELETE /api/transactions/:id
+MW -> C : deleteTransaction()
+C -> DB : deleteMany({id, userId})
+alt count = 0
+  C --> FE : 404 {error}
+else count = 1
+  C --> FE : 200 {message: "Đã xóa giao dịch."}
+end
+
+note over C, DB
+  Toạ độ lưu trực tiếp 2 field latitude/longitude (Float),
+  không cần raw SQL hay kiểu địa lý riêng như trên Postgres/PostGIS.
+end note
+@enduml

@@ -1,0 +1,80 @@
+@startuml Seq_Auth_Xac_thuc
+!theme plain
+title SEQUENCE - ĐĂNG KÝ / ĐĂNG NHẬP / HỒ SƠ CÁ NHÂN
+
+skinparam responseMessageBelowArrow true
+
+actor "Người dùng" as U
+participant "Frontend\nlogin.html / js/api.js" as FE
+participant "Express Router\n/api/auth" as R
+participant "auth.controller" as C
+database "PostgreSQL\n(Prisma)" as DB
+
+== Đăng ký ==
+U -> FE : nhập tên, email, mật khẩu\nbấm "Đăng ký"
+FE -> R : POST /api/auth/register\n{name, email, password}
+R -> C : register(req,res)
+C -> DB : findUnique({email})
+DB --> C : null (chưa tồn tại)
+C -> C : bcrypt.hash(password, 10)
+C -> DB : user.create({...})
+DB --> C : user mới
+C -> C : signToken(user.id)\n(JWT hạn 7 ngày)
+C --> FE : 201 {token, user}\n(user không chứa password)
+FE -> FE : localStorage lưu token + user
+FE --> U : vào thẳng trang chủ
+
+alt Email đã tồn tại
+  C --> FE : 400 {error: "Email đã được sử dụng."}
+end
+
+== Đăng nhập ==
+U -> FE : nhập email + mật khẩu
+FE -> R : POST /api/auth/login
+R -> C : login(req,res)
+C -> DB : findUnique({email})
+DB --> C : user | null
+
+alt Không tìm thấy tài khoản
+  C --> FE : 404 {error: "Không tìm thấy tài khoản."}
+else Tài khoản bị khoá
+  C --> FE : 403 {error: "...đã bị khóa..."}
+else Sai mật khẩu
+  C -> C : bcrypt.compare() = false
+  C --> FE : 401 {error: "Sai mật khẩu."}
+end
+
+C -> C : bcrypt.compare() = true
+C -> C : signToken(user.id)
+C --> FE : 200 {message, token, user}
+
+== Gọi API cần đăng nhập (mọi request sau đó) ==
+FE -> R : GET /api/auth/me\nAuthorization: Bearer <token>
+R -> R : verifyToken()\njwt.verify + tra cứu user trong DB
+alt Token sai / hết hạn
+  R --> FE : 401 {error} → FE logout về login.html
+else User bị BLOCKED
+  R --> FE : 403 {error: "tài khoản đã bị khóa"}
+else Hợp lệ
+  R -> C : me(req,res) với req.user
+  C --> FE : 200 {id, email, name, bio, avatar,...}
+end
+
+== Cập nhật hồ sơ ==
+FE -> R : PUT /api/auth/profile\n{name?, email?, bio?, avatar?}
+R -> C : updateProfile()
+C -> DB : kiểm tra email mới trùng?\nuser.update(data)
+DB --> C : user sau cập nhật
+C --> FE : 200 {message, user}
+
+== Đổi mật khẩu ==
+FE -> R : PUT /api/auth/password\n{oldPassword, newPassword}
+R -> C : changePassword()
+C -> C : bcrypt.compare(oldPassword,\nreq.user.password)
+alt Mật khẩu cũ sai
+  C --> FE : 401 {error: "Mật khẩu cũ không đúng."}
+else Đúng
+  C -> DB : user.update(password: hash(mới))
+  C --> FE : 200 {message: "Đổi mật khẩu thành công."}
+end
+@enduml

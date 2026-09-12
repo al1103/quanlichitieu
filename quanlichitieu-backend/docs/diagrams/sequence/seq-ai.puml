@@ -1,0 +1,77 @@
+@startuml Seq_AI_Tro_ly
+!theme plain
+title SEQUENCE - TRỢ LÝ AI (Nhận xét + Chatbot, Proxy Ollama Cloud)
+
+skinparam responseMessageBelowArrow true
+
+actor "Người dùng" as U
+participant "Frontend\nreports.html / chatbot.html\n(js/ai.js)" as FE
+participant "verifyToken" as MW
+participant "ai.controller" as C
+participant "ollama.js" as OS
+database "PostgreSQL" as DB
+participant "Ollama Cloud" as OLA
+
+== Chuẩn bị dữ liệu (Frontend) ==
+U -> FE : mở Reports / bấm chatbot AI
+FE -> FE : buildFinanceSummaryText(transactions)\n"Tổng thu nhập: ...\nTổng chi tiêu: ...\nChi tiêu theo danh mục:..."
+
+== Chặn theo gói tài khoản (áp dụng cho cả insights & chat) ==
+FE -> MW : POST /api/ai-* (kèm token)
+MW -> C : controller AI
+C -> C : checkPlan(user): plan == 'PREMIUM' ?
+
+alt Người dùng gói FREE
+  C --> FE : 403 {code:'PLAN_REQUIRED',\nerror:"...nâng cấp gói..."}
+  FE --> U : hiện CTA "Nạp tiền & nâng cấp ngay"\n(link sang upgrade.html)
+else Gói Premium
+  C -> DB : count AiLog hôm nay (quota)
+end
+
+== Nhận xét tài chính (UC18) ==
+U -> FE : bấm "Phân tích chi tiêu"
+FE -> MW : POST /api/ai-insights\n{summary} + Bearer token
+MW -> C : getInsights()
+C -> DB : count AiLog hôm nay của user
+
+alt Vượt hạn mức ngày (AppSetting ai_daily_quota)
+  C --> FE : 429 {error: "đạt hạn mức N câu hỏi/ngày"}
+else Còn quota
+  C -> C : messages = [{role:'system',\ncontent: SYSTEM_PROMPT + summary}]
+  C -> OS : callOllama(messages)
+  alt Chưa cấu hình OLLAMA_API_KEY
+    OS --> C : ApiError 500\n"Chưa cấu hình API key AI..."
+  else Key OK
+    OS -> OLA : POST https://ollama.com/api/chat\n{model, messages, stream:false}\nAuthorization: Bearer <key>
+    alt Lỗi upstream
+      OLA --x OS : lỗi HTTP → ApiError 502
+    else Thành công
+      OLA --> OS : {message.content,\nprompt_eval_count, eval_count}
+      OS --> C : {content, promptTokens, completionTokens}
+      C -> DB : aiLog.create({userId, endpoint,\nmodel, tokens,\ncostEstimate}) ← GHI NHẬT KÝ usage
+      C --> FE : 200 {insight}
+      FE --> U : render nhận xét AI
+    end
+  end
+end
+
+== Chatbot hội thoại (UC19) ==
+U -> FE : gõ câu hỏi → gửi
+FE -> MW : POST /api/ai-chat\n{message, history[], summary}
+MW -> C : chat()
+C -> DB : kiểm tra quota như trên
+C -> C : history = lọc role hợp lệ,\nchỉ giữ 10 lượt gần nhất
+C -> OS : callOllama([system+summary,\n...history, {user, message}])
+OS -> OLA : chat API
+OLA --> OS : reply content
+OS --> C : result
+C -> DB : aiLog.create(...) (endpoint 'ai-chat')
+C --> FE : 200 {reply}
+FE --> U : hiển thị trong panel chatbot
+
+note over FE, OLA
+  API key OLLAMA chỉ tồn tại trong .env của server,
+  KHÔNG bao giờ xuống trình duyệt — FE chỉ gọi
+  2 endpoint trung gian này.
+end note
+@enduml

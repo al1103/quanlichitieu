@@ -1,0 +1,55 @@
+@startuml Act_Muc_tieu_tiet_kiem
+!theme plain
+title ACTIVITY - QUẢN LÝ MỤC TIÊU TIẾT KIỆM & ĐÓNG GÓP
+
+start
+:Mở trang savings.html;
+:Xem danh sách mục tiêu\n(GET /api/savings — kèm % hoàn thành);
+
+if (Thao tác nào?) then (Thêm mục tiêu)
+  :Nhập tên, số tiền mục tiêu,\nhạn chót?, đóng góp/tháng?;
+  if (name rỗng hoặc targetAmount <= 0?) then (có)
+    :400 Lỗi validate;
+    stop
+  else (đạt)
+    :INSERT SavingsGoal\n(currentAmount=0, IN_PROGRESS);
+    :201 Trả goal (0%);
+    stop
+  endif
+
+elseif (Đóng góp tiền) then (deposit)
+  :Nhập số tiền đóng góp;
+  if (amount > 0?) then (không)
+    :400 "Số tiền đóng góp phải là số lớn hơn 0";
+    stop
+  endif
+  :Kiểm tra sở hữu (findFirst id+userId);
+  if (Không phải của mình?) then (có)
+    :404 Không tìm thấy;
+    stop
+  endif
+  :UPDATE currentAmount += amount\n(increment nguyên tử);
+  if (currentAmount >= targetAmount\nVÀ status != COMPLETED?) then (có)
+    :UPDATE status = 'COMPLETED'\n→ tự hoàn tất mục tiêu;
+  else (chưa đủ)
+  endif
+  :200 {message, goal + percentComplete\n(chặn tối đa 100%)};
+  stop
+
+elseif (Sửa mục tiêu) then (update)
+  :PUT name/target/deadline/status;
+  :Sau update: nếu đã đạt target\n→ tự chuyển COMPLETED;
+  :200 Trả goal;
+  stop
+
+else (Xoá)
+  :DELETE deleteMany({id, userId});
+  if (count = 0?) then (có)
+    :404;
+    stop
+  else (không)
+    :200 "Đã xóa mục tiêu tiết kiệm.";
+    stop
+  endif
+endif
+@enduml

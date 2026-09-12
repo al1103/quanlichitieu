@@ -1,0 +1,57 @@
+@startuml Act_Dang_ky_Dang_nhap
+!theme plain
+title ACTIVITY - ĐĂNG KÝ / ĐĂNG NHẬP TÀI KHOẢN
+
+start
+:Mở trang login.html;
+
+if (Đã có tài khoản?) then (có)
+  :Nhập email + mật khẩu;
+  if (Bỏ trống email/mật khẩu?) then (có)
+    :Hiện "Vui lòng nhập email và mật khẩu";
+    stop
+  endif
+  :Gọi POST /api/auth/login;
+  if (Tài khoản tồn tại?) then (không)
+    :Hiện "Không tìm thấy tài khoản" (404);
+    stop
+  elseif (Tài khoản bị BLOCKED?) then (có)
+    :Hiện "Tài khoản đã bị khóa" (403);
+    stop
+  elseif (Sai mật khẩu?) then (có)
+    :Hiện "Sai mật khẩu." (401);
+    stop
+  else (đúng)
+    :Server ký JWT (hạn 7 ngày);
+  endif
+else (chưa - đăng ký)
+  :Nhập tên, email, mật khẩu;
+  if (Email đúng định dạng?\nMật khẩu >= 6 ký tự?) then (không)
+    :400 Hiện lỗi validate;
+    stop
+  else (đạt)
+    :Gọi POST /api/auth/register;
+    if (Email đã được sử dụng?) then (có)
+      :400 Hiện "Email đã được sử dụng.";
+      stop
+    else (chưa)
+      :bcrypt.hash(password,10) → tạo User\n→ cấp JWT luôn (đăng nhập luôn);
+    endif
+  endif
+endif
+
+:Lưu localStorage: token, user;
+note right: apiFetch() tự gắn\nAuthorization: Bearer <token>\ncho mọi request sau này
+:Chuyển hướng index.html;
+
+partition "Mọi lần gọi API cần quyền" {
+  :verifyToken: giải mã JWT;
+  if (Token hợp lệ & user ACTIVE?) then (không)
+    :401/403 → xoá token → về login.html;
+    stop
+  else (có)
+    :cho đi tiếp controller;
+  endif
+}
+stop
+@enduml

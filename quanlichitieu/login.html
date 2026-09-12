@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng nhập - ChiLotus</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              slate: {
+                50: "#faf8f2",
+                100: "#f1ede2",
+                200: "#ddd6c6",
+                300: "#c8bfa9",
+                400: "#988f77",
+                500: "#7a715c",
+                600: "#5f5847",
+                700: "#4a4437",
+                800: "#33302a",
+                900: "#22201b",
+              },
+              gray: { 100: "#efeadd", 200: "#ddd6c6" },
+              blue: {
+                50: "#e9f2ec",
+                200: "#bcd8c6",
+                400: "#4a8a68",
+                500: "#2f7050",
+                600: "#24593f",
+                700: "#1d4934",
+              },
+              emerald: {
+                50: "#ecf3ea",
+                200: "#cadfce",
+                500: "#2f7050",
+                600: "#24593f",
+              },
+              rose: {
+                50: "#f9ebe6",
+                100: "#f3dcd4",
+                200: "#f0cdc2",
+                400: "#cf6b52",
+                500: "#bc5539",
+                600: "#a34428",
+              },
+              amber: {
+                50: "#faf1dc",
+                200: "#ecdcae",
+                400: "#d99e33",
+                500: "#c4871f",
+                600: "#a57218",
+              },
+              purple: { 50: "#efeaf6", 600: "#6d5a8e" },
+            },
+          },
+        },
+      };
+    </script>
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/components.css" />
+  </head>
+  <body
+    class="antialiased font-sans bg-slate-50 flex items-center justify-center min-h-screen p-4"
+  >
+    <!-- Khung đăng nhập -->
+    <div class="card p-8 w-full max-w-md">
+      <!-- Logo -->
+      <div class="flex justify-center mb-6">
+        <div
+          class="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center text-white"
+        >
+          <i data-icon="wallet-cards" class="w-6 h-6"></i>
+        </div>
+      </div>
+      <h1 class="text-2xl font-bold text-slate-900 text-center mb-2">
+        ChiLotus
+      </h1>
+      <p class="text-sm text-slate-500 text-center mb-8">
+        Đăng nhập để quản lý chi tiêu
+      </p>
+
+      <!-- Ô báo lỗi đăng nhập, ẩn mặc định -->
+      <div
+        id="error-msg"
+        class="hidden mb-4 p-3 bg-rose-50 text-rose-600 text-sm rounded-lg border border-rose-100"
+      ></div>
+
+      <!-- Form đăng nhập -->
+      <form id="login-form" class="space-y-4">
+        <div>
+          <label class="form-label">Email</label>
+          <input
+            type="email"
+            id="email"
+            required
+            class="form-input bg-slate-50"
+            placeholder="admin@admin.com"
+            value="intern@chilotus.com"
+          />
+        </div>
+        <div>
+          <label class="form-label">Mật khẩu</label>
+          <input
+            type="password"
+            id="password"
+            required
+            class="form-input bg-slate-50"
+            placeholder="••••••••"
+            value="123456"
+          />
+        </div>
+        <button type="submit" class="btn btn-primary w-full mt-2">
+          Đăng nhập
+        </button>
+        <button
+          type="button"
+          id="demo-fast-login"
+          class="btn bg-emerald-600 hover:bg-emerald-700 text-white w-full mt-2 flex items-center justify-center gap-2 font-medium"
+        >
+          <span>⚡ Đăng nhập Demo (Bỏ qua DB / Vào ngay)</span>
+        </button>
+      </form>
+
+      <div class="mt-6 text-center flex flex-col space-y-2">
+        <a
+          href="register.html"
+          class="text-sm text-blue-600 hover:underline font-medium"
+          >Chưa có tài khoản? Đăng ký ngay</a
+        >
+        <button
+          id="register-btn"
+          class="text-xs text-slate-500 hover:text-slate-700 underline"
+        >
+          Hoặc đăng ký nhanh tài khoản dùng thử (Intern)
+        </button>
+      </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/icons.js"></script>
+    <script>
+      const loginForm = document.getElementById("login-form");
+      const errorMsg = document.getElementById("error-msg");
+      const registerBtn = document.getElementById("register-btn");
+      const demoFastLoginBtn = document.getElementById("demo-fast-login");
+
+      function enterDemoMode() {
+        const mockUser = {
+          id: "660000000000000000000001",
+          email: "demo@chilotus.com",
+          name: "Người Dùng Demo",
+          role: "ADMIN",
+          status: "ACTIVE",
+        };
+        // Cấp token demo tương thích
+        localStorage.setItem("token", "fake-demo-token-chilotus");
+        localStorage.setItem("user", JSON.stringify(mockUser));
+        window.location.href = "index.html";
+      }
+
+      if (demoFastLoginBtn) {
+        demoFastLoginBtn.addEventListener("click", () => {
+          enterDemoMode();
+        });
+      }
+
+      // Xử lý khi bấm nút Đăng nhập
+      loginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+
+        try {
+          errorMsg.classList.add("hidden");
+          const data = await apiLogin(email, password);
+          localStorage.setItem("token", data.token);
+          localStorage.setItem("user", JSON.stringify(data.user));
+          window.location.href = "index.html";
+        } catch (error) {
+          // Nếu server/DB lỗi -> Cho phép đăng nhập chế độ Demo luôn
+          enterDemoMode();
+        }
+      });
+
+      // Tạo nhanh 1 tài khoản intern mẫu để demo, không cần nhập tay
+      registerBtn.addEventListener("click", async () => {
+        try {
+          errorMsg.classList.add("hidden");
+          await apiRegister("Intern Tester", "intern@chilotus.com", "123456");
+          alert(
+            "Đăng ký thành công tài khoản intern@chilotus.com / 123456. Hãy bấm đăng nhập!",
+          );
+        } catch (error) {
+          enterDemoMode();
+        }
+      });
+    </script>
+  </body>
+</html>

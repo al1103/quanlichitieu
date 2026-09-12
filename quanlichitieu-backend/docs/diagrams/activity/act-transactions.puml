@@ -1,0 +1,53 @@
+@startuml Act_Them_giao_dich
+!theme plain
+title ACTIVITY - THÊM / QUẢN LÝ GIAO DỊCH THU-CHI
+
+start
+:Bấm nút "+" mở modal Thêm giao dịch;
+:Chọn loại THU / CHI (mặc định CHI);
+
+partition "Kiểm tra dữ liệu đầu vào (server)" {
+  :Nhận {amount, type, category,\ndescription, date [,lat,lng]};
+
+  if (amount là số > 0?) then (không)
+    :400 "Số tiền phải là số lớn hơn 0";
+    stop
+  endif
+  if (type ∈ {'THU','CHI'}?) then (không)
+    :400 "Loại giao dịch phải là THU hoặc CHI";
+    stop
+  endif
+  if (category != rỗng?) then (không)
+    :400 "Vui lòng chọn danh mục";
+    stop
+  endif
+  if (date gửi lên parse được?) then (không)
+    :400 "Ngày giao dịch không hợp lệ";
+    stop
+  endif
+}
+
+if (Có gửi latitude/longitude?) then (có)
+  if (lat ∈ [-90,90] và lng ∈ [-180,180]?) then (không)
+    :400 "Toạ độ không hợp lệ";
+    stop
+  else (đạt)
+  endif
+else (không)
+endif
+
+partition "Ghi DB" {
+  :INSERT Transaction\n(userId, amount, type, category,\ndescription, date\n[, latitude, longitude]);
+}
+
+:201 Trả object giao dịch vừa tạo;
+:FE tải lại danh sách (sort mới nhất trước)\n+ toast "Thêm giao dịch thành công!";
+
+note right
+  Sửa (PUT): chỉ nhận field có gửi lên,
+  kiểm tra sở hữu theo userId → 404 nếu của người khác.
+  Xoá (DELETE): deleteMany({id, userId}).
+end note
+
+stop
+@enduml

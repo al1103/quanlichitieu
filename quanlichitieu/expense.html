@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chi tiêu - ChiLotus</title>
+
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+
+        extend: {
+          colors: {
+            slate: { 50:'#faf8f2', 100:'#f1ede2', 200:'#ddd6c6', 300:'#c8bfa9', 400:'#988f77', 500:'#7a715c', 600:'#5f5847', 700:'#4a4437', 800:'#33302a', 900:'#22201b' },
+            gray: { 100:'#efeadd', 200:'#ddd6c6' },
+            blue: { 50:'#e9f2ec', 200:'#bcd8c6', 400:'#4a8a68', 500:'#2f7050', 600:'#24593f', 700:'#1d4934' },
+            emerald: { 50:'#ecf3ea', 200:'#cadfce', 500:'#2f7050', 600:'#24593f' },
+            rose: { 50:'#f9ebe6', 100:'#f3dcd4', 200:'#f0cdc2', 400:'#cf6b52', 500:'#bc5539', 600:'#a34428' },
+            amber: { 50:'#faf1dc', 200:'#ecdcae', 400:'#d99e33', 500:'#c4871f', 600:'#a57218' },
+            purple: { 50:'#efeaf6', 600:'#6d5a8e' }
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- style.css: style nền chung. components.css: các class dùng chung (card, btn, nav-link...) -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<!-- data-tx-filter="CHI": báo cho main.js biết trang này chỉ hiển thị giao dịch loại Chi tiêu -->
+<body class="antialiased font-sans flex flex-col md:flex-row min-h-screen relative" data-tx-filter="CHI">
+
+  <!-- Nơi hiện thông báo (toast) góc phải màn hình -->
+  <div id="toast-container" class="fixed top-20 right-4 z-50 flex flex-col gap-2"></div>
+
+  <!-- Các khối layout dùng chung, được layout.js tải và chèn vào -->
+  <div id="layout-sidebar"></div>
+  <div id="layout-bottom-nav"></div>
+
+  <div class="flex-1 md:ml-64 flex flex-col min-h-screen pb-16 md:pb-0">
+    <div id="layout-header"></div>
+
+    <!-- ====== NỘI DUNG TRANG CHI TIÊU ====== -->
+    <main class="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full">
+
+      <div class="mb-6">
+        <p class="text-sm text-slate-500">Theo dõi tất cả các khoản chi tiêu của bạn.</p>
+      </div>
+
+      <!-- Thẻ tổng chi tiêu, số tiền được main.js tính và điền vào #page-total-amount -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div class="card p-5">
+          <div class="stat-icon stat-icon-rose mb-3">
+            <i data-icon="arrow-up-right" class="w-5 h-5"></i>
+          </div>
+          <p class="text-sm font-medium text-slate-500 mb-1">Tổng chi tiêu</p>
+          <h3 id="page-total-amount" class="text-2xl font-bold text-rose-600">0 ₫</h3>
+        </div>
+      </div>
+
+      <!-- Danh sách giao dịch chi tiêu, do main.js đổ dữ liệu vào -->
+      <div class="card overflow-hidden">
+        <!-- Bảng cho màn hình lớn -->
+        <div class="hidden md:block overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50/50">
+                <th class="table-head-cell">Giao dịch</th>
+                <th class="table-head-cell">Danh mục</th>
+                <th class="table-head-cell">Ngày</th>
+                <th class="table-head-cell text-right">Số tiền</th>
+              </tr>
+            </thead>
+            <tbody id="tx-table-body" class="divide-y divide-gray-100">
+              <!-- Dữ liệu được đổ từ API -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Danh sách dạng thẻ cho mobile -->
+        <div id="tx-mobile-list" class="md:hidden flex flex-col divide-y divide-gray-100">
+          <!-- Dữ liệu được đổ từ API -->
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <div id="layout-modal"></div>
+  <div id="layout-chatbot"></div>
+
+  <script src="js/api.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

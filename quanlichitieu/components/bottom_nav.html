@@ -1,0 +1,54 @@
+<!-- Thanh menu dưới cùng (chỉ hiện trên mobile). Cuộn ngang vì có nhiều mục. -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 z-40 pb-safe">
+  <div class="flex items-center h-16 gap-1 px-2 overflow-x-auto hide-scrollbar">
+    <a href="index.html" class="bottom-nav-link">
+      <i data-icon="layout-dashboard" class="w-5 h-5"></i>
+      <span class="text-[10px] font-medium">Tổng quan</span>
+    </a>
+    <a href="transactions.html" class="bottom-nav-link">
+      <i data-icon="receipt-text" class="w-5 h-5"></i>
+      <span class="text-[10px] font-medium">Giao dịch</span>
+    </a>
+    <a href="income.html" class="bottom-nav-link">
+      <i data-icon="arrow-down-left" class="w-5 h-5"></i>
+      <span class="text-[10px] font-medium">Thu nhập</span>
+    </a>
+    <a href="expense.html" class="bottom-nav-link">
+      <i data-icon="arrow-up-right" class="w-5 h-5"></i>
+      <span class="text-[10px] font-medium">Chi tiêu</span>
+    </a>
+    <a href="budget.html" class="bottom-nav-link">
+      <i data-icon="wallet" class="w-5 h-5"></i>
+      <span class="text-[10px] font-medium">Ngân sách</span>
+    </a>
+    <a href="fixed-expenses.html" class="bottom-nav-link">
+      <i data-icon="repeat" class="w-5 h-5"></i>
+      <span class="text-[10px] font-medium">Chi cố định</span>
+    </a>
+    <a href="savings.html" class="bottom-nav-link">
+      <i data-icon="piggy-bank" class="w-5 h-5"></i>
+      <span class="text-[10px] font-medium">Tiết kiệm</span>
+    </a>
+    <a href="reports.html" class="bottom-nav-link">
+      <i data-icon="pie-chart" class="w-5 h-5"></i>
+      <span class="text-[10px] font-medium">Báo cáo</span>
+    </a>
+    <a href="search.html" class="bottom-nav-link">
+      <i data-icon="search" class="w-5 h-5"></i>
+      <span class="text-[10px] font-medium">Tìm kiếm</span>
+    </a>
+    <a href="settings.html" class="bottom-nav-link">
+      <i data-icon="user" class="w-5 h-5"></i>
+      <span class="text-[10px] font-medium">Tài khoản</span>
+    </a>
+    <a href="admin.html" id="nav-admin-link-mobile" class="bottom-nav-link hidden">
+      <i data-icon="shield-check" class="w-5 h-5"></i>
+      <span class="text-[10px] font-medium">Quản trị</span>
+    </a>
+  </div>
+</nav>
+
+<!-- Nút tròn (+) nổi để thêm giao dịch nhanh trên mobile -->
+<button class="add-tx-btn md:hidden fixed bottom-20 right-4 w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg shadow-blue-600/30 flex items-center justify-center z-40 hover:bg-blue-700 active:scale-95 transition-all">
+  <i data-icon="plus" class="w-6 h-6"></i>
+</button>

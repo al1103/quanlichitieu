@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chi cố định - ChiLotus</title>
+
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+
+        extend: {
+          colors: {
+            slate: { 50:'#faf8f2', 100:'#f1ede2', 200:'#ddd6c6', 300:'#c8bfa9', 400:'#988f77', 500:'#7a715c', 600:'#5f5847', 700:'#4a4437', 800:'#33302a', 900:'#22201b' },
+            gray: { 100:'#efeadd', 200:'#ddd6c6' },
+            blue: { 50:'#e9f2ec', 200:'#bcd8c6', 400:'#4a8a68', 500:'#2f7050', 600:'#24593f', 700:'#1d4934' },
+            emerald: { 50:'#ecf3ea', 200:'#cadfce', 500:'#2f7050', 600:'#24593f' },
+            rose: { 50:'#f9ebe6', 100:'#f3dcd4', 200:'#f0cdc2', 400:'#cf6b52', 500:'#bc5539', 600:'#a34428' },
+            amber: { 50:'#faf1dc', 200:'#ecdcae', 400:'#d99e33', 500:'#c4871f', 600:'#a57218' },
+            purple: { 50:'#efeaf6', 600:'#6d5a8e' }
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- style.css: style nền chung. components.css: các class dùng chung (card, btn, nav-link...) -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body class="antialiased font-sans flex flex-col md:flex-row min-h-screen relative">
+
+  <!-- Nơi hiện thông báo (toast) góc phải màn hình -->
+  <div id="toast-container" class="fixed top-20 right-4 z-50 flex flex-col gap-2"></div>
+
+  <!-- Các khối layout dùng chung, được layout.js tải và chèn vào -->
+  <div id="layout-sidebar"></div>
+  <div id="layout-bottom-nav"></div>
+
+  <div class="flex-1 md:ml-64 flex flex-col min-h-screen pb-16 md:pb-0">
+    <div id="layout-header"></div>
+
+    <!-- ====== NỘI DUNG TRANG CHI CỐ ĐỊNH ====== -->
+    <main class="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full">
+
+      <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <p class="text-sm text-slate-500">Quản lý các khoản phải chi định kỳ mỗi tháng.</p>
+          <p class="text-lg font-semibold text-slate-900 mt-1">Tổng cộng: <span id="fixed-expense-total" class="text-rose-600">0 ₫</span>/tháng</p>
+        </div>
+        <button id="add-fixed-btn" class="btn btn-secondary">
+          <i data-icon="plus" class="w-4 h-4"></i>
+          <span>Thêm chi cố định</span>
+        </button>
+      </div>
+
+      <!-- Danh sách chi cố định, main.js đổ dữ liệu từ API vào -->
+      <div id="fixed-expense-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+    </main>
+  </div>
+
+  <!-- Popup thêm chi cố định mới (main.js mở/đóng) -->
+  <div id="fixed-expense-modal" class="fixed inset-0 z-50 hidden">
+    <div class="mini-backdrop absolute inset-0 bg-slate-900/40 backdrop-blur-sm opacity-0 transition-opacity duration-300"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+      <div class="mini-card card bg-white w-full max-w-md rounded-2xl shadow-xl transform scale-95 opacity-0 transition-all duration-300">
+        <div class="flex justify-between items-center p-5 border-b border-gray-100">
+          <h2 class="text-lg font-semibold text-slate-900">Thêm khoản chi cố định</h2>
+          <button class="close-mini-btn p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md transition-colors">
+            <i data-icon="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+        <div class="p-5 space-y-5">
+          <div>
+            <label class="form-label-caps">Danh mục</label>
+            <select id="fixed-expense-category" class="form-input appearance-none">
+              <option value="Nhà ở">Nhà ở</option>
+              <option value="Điện nước">Điện nước</option>
+              <option value="Internet">Internet</option>
+              <option value="Đăng ký dịch vụ">Đăng ký dịch vụ</option>
+              <option value="Khác">Khác</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label-caps">Tên khoản chi</label>
+            <input type="text" id="fixed-expense-desc" placeholder="VD: Tiền nhà, Netflix..." class="form-input" />
+          </div>
+          <div>
+            <label class="form-label-caps">Số tiền mỗi tháng</label>
+            <div class="relative">
+              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">₫</span>
+              <input type="number" id="fixed-expense-amount" placeholder="0" min="1000" step="1000" class="form-input pl-8 text-lg font-semibold py-2.5" />
+            </div>
+          </div>
+        </div>
+        <div class="p-5 border-t border-gray-100 flex justify-end gap-3 bg-slate-50 rounded-b-2xl">
+          <button class="close-mini-btn btn btn-secondary">Hủy</button>
+          <button id="save-fixed-expense-btn" class="btn btn-primary">Lưu thông tin</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="layout-modal"></div>
+  <div id="layout-chatbot"></div>
+
+  <script src="js/api.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

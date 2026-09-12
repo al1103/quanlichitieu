@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản trị hệ thống - ChiLotus</title>
+
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+
+        extend: {
+          colors: {
+            slate: { 50:'#faf8f2', 100:'#f1ede2', 200:'#ddd6c6', 300:'#c8bfa9', 400:'#988f77', 500:'#7a715c', 600:'#5f5847', 700:'#4a4437', 800:'#33302a', 900:'#22201b' },
+            gray: { 100:'#efeadd', 200:'#ddd6c6' },
+            blue: { 50:'#e9f2ec', 200:'#bcd8c6', 400:'#4a8a68', 500:'#2f7050', 600:'#24593f', 700:'#1d4934' },
+            emerald: { 50:'#ecf3ea', 200:'#cadfce', 500:'#2f7050', 600:'#24593f' },
+            rose: { 50:'#f9ebe6', 100:'#f3dcd4', 200:'#f0cdc2', 400:'#cf6b52', 500:'#bc5539', 600:'#a34428' },
+            amber: { 50:'#faf1dc', 200:'#ecdcae', 400:'#d99e33', 500:'#c4871f', 600:'#a57218' },
+            purple: { 50:'#efeaf6', 600:'#6d5a8e' }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- style.css: style nền chung. components.css: các class dùng chung (card, btn, nav-link...) -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body class="antialiased font-sans flex flex-col md:flex-row min-h-screen relative">
+
+  <!-- Nơi hiện thông báo (toast) góc phải màn hình -->
+  <div id="toast-container" class="fixed top-20 right-4 z-50 flex flex-col gap-2"></div>
+
+  <!-- Các khối layout dùng chung, được layout.js tải và chèn vào -->
+  <div id="layout-sidebar"></div>
+  <div id="layout-bottom-nav"></div>
+
+  <div class="flex-1 md:ml-64 flex flex-col min-h-screen pb-16 md:pb-0">
+    <div id="layout-header"></div>
+
+    <!-- ====== NỘI DUNG TRANG QUẢN TRỊ HỆ THỐNG ====== -->
+    <main id="admin-page" class="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full">
+
+      <!-- Thông báo cho người KHÔNG phải admin -->
+      <div id="admin-denied" class="card p-10 text-center hidden">
+        <i data-icon="shield-check" class="w-10 h-10 mx-auto mb-3 text-slate-300"></i>
+        <h2 class="text-lg font-bold text-slate-900 mb-1">Truy cập bị từ chối</h2>
+        <p class="text-sm text-slate-500 mb-4">Chức năng này chỉ dành cho quản trị viên hệ thống.</p>
+        <a href="index.html" class="btn btn-primary">Về trang chủ</a>
+      </div>
+
+      <!-- Nội dung dành cho ADMIN -->
+      <div id="admin-content" class="hidden space-y-6">
+
+        <!-- 1. Thẻ số liệu tổng quan -->
+        <div class="grid grid-cols-2 lg:grid-cols-6 gap-4">
+          <div class="card p-4"><p class="text-xs text-slate-500 mb-1">Người dùng</p><h3 id="st-users" class="text-xl font-bold text-slate-900">...</h3></div>
+          <div class="card p-4"><p class="text-xs text-slate-500 mb-1">Gói Premium</p><h3 id="st-premium" class="text-xl font-bold text-blue-600">...</h3></div>
+          <div class="card p-4"><p class="text-xs text-slate-500 mb-1">Gói Free</p><h3 id="st-free" class="text-xl font-bold text-slate-700">...</h3></div>
+          <div class="card p-4"><p class="text-xs text-slate-500 mb-1">Doanh thu gói</p><h3 id="st-revenue" class="text-xl font-bold text-emerald-600">...</h3></div>
+          <div class="card p-4"><p class="text-xs text-slate-500 mb-1">AI hôm nay</p><h3 id="st-ai-today" class="text-xl font-bold text-purple-600">...</h3></div>
+          <div class="card p-4"><p class="text-xs text-slate-500 mb-1">Giao dịch</p><h3 id="st-transactions" class="text-xl font-bold text-slate-900">...</h3></div>
+        </div>
+
+        <!-- 2. Quản lý người dùng -->
+        <div class="card overflow-hidden">
+          <div class="px-5 py-4 border-b border-gray-100 flex flex-col md:flex-row justify-between gap-3">
+            <h3 class="text-base font-semibold text-slate-900">Người dùng</h3>
+            <div class="relative">
+              <i data-icon="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+              <input type="text" id="admin-user-search" placeholder="Tìm theo tên hoặc email..." class="form-input pl-9 md:max-w-xs text-sm" />
+            </div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr>
+                  <th class="table-head-cell bg-slate-50">Người dùng</th>
+                  <th class="table-head-cell bg-slate-50">Vai trò</th>
+                  <th class="table-head-cell bg-slate-50">Gói</th>
+                  <th class="table-head-cell bg-slate-50">Dữ liệu</th>
+                  <th class="table-head-cell bg-slate-50">Trạng thái</th>
+                  <th class="table-head-cell bg-slate-50 text-right">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="admin-users-tbody" class="divide-y divide-gray-100"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 3. Quản lý danh mục toàn hệ thống -->
+        <div class="card overflow-hidden">
+          <div class="px-5 py-4 border-b border-gray-100">
+            <h3 class="text-base font-semibold text-slate-900">Danh mục mặc định (áp dụng mọi người dùng)</h3>
+          </div>
+          <div class="px-5 py-4 border-b border-gray-100 flex flex-col md:flex-row gap-3 md:items-end">
+            <div class="flex-1"><label class="form-label-caps">Tên danh mục</label><input type="text" id="cat-name" placeholder="VD: Y tế" class="form-input" /></div>
+            <div class="md:w-36"><label class="form-label-caps">Kiểu</label>
+              <select id="cat-type" class="form-input appearance-none">
+                <option value="CHI">Chi tiêu</option>
+                <option value="THU">Thu nhập</option>
+                <option value="BOTH">Cả hai</option>
+              </select>
+            </div>
+            <div class="md:w-40"><label class="form-label-caps">Icon (tên file)</label><input type="text" id="cat-icon" value="tags" class="form-input" /></div>
+            <div class="md:w-24"><label class="form-label-caps">Màu</label><input type="color" id="cat-color" value="#ef4444" class="form-input h-[38px] p-1" /></div>
+            <button id="add-cat-btn" class="btn btn-primary"><i data-icon="plus" class="w-4 h-4"></i><span>Thêm</span></button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr>
+                  <th class="table-head-cell bg-slate-50">Danh mục</th>
+                  <th class="table-head-cell bg-slate-50">Kiểu</th>
+                  <th class="table-head-cell bg-slate-50 text-right">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="admin-cats-tbody" class="divide-y divide-gray-100"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 4. Cấu hình AI + log gần đây -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="card overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-100">
+              <h3 class="text-base font-semibold text-slate-900">Cấu hình AI</h3>
+            </div>
+            <div class="p-5 space-y-4">
+              <div>
+                <label class="form-label-caps">Model Ollama Cloud</label>
+                <input type="text" id="ai-model-input" class="form-input" placeholder="gpt-oss:20b-cloud" />
+              </div>
+              <div>
+                <label class="form-label-caps">Hạn mức câu hỏi AI / ngày / người</label>
+                <input type="number" id="ai-quota-input" min="1" max="10000" class="form-input" />
+              </div>
+              <div class="flex justify-end pt-1">
+                <button id="save-ai-settings-btn" class="btn btn-primary">Lưu cấu hình</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-100">
+              <h3 class="text-base font-semibold text-slate-900">Yêu cầu AI gần nhất</h3>
+            </div>
+            <div id="ai-recent-logs" class="divide-y divide-gray-100 max-h-72 overflow-y-auto"></div>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <div id="layout-modal"></div>
+  <div id="layout-chatbot"></div>
+
+  <script src="js/api.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

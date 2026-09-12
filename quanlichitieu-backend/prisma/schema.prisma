@@ -1,0 +1,186 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+// ==============================
+// NGƯỜI DÙNG
+// ==============================
+model User {
+  id           String        @id @default(auto()) @map("_id") @db.ObjectId
+  email        String        @unique
+  password     String
+  name         String?
+  bio          String?
+  avatar       String?
+  role         String        @default("USER") // 'USER' | 'ADMIN'
+  status       String        @default("ACTIVE") // 'ACTIVE' | 'BLOCKED'
+  plan          String        @default("FREE") // 'FREE' | 'PREMIUM' — chỉ gói PREMIUM mới dùng được AI
+  walletBalance Float         @default(0) // Số dư ví: nạp tiền vào đây để mua gói Premium
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  transactions Transaction[]
+  budgets      Budget[]
+  savingsGoals SavingsGoal[]
+  aiLogs       AiLog[]
+  walletLogs   WalletLog[]
+  paymentOrders PaymentOrder[]
+  fixedExpenses FixedExpense[]
+}
+
+// ==============================
+// LỊCH SỬ BIẾN ĐỘNG VÍ TIỀN (nạp tiền / thanh toán gói Premium)
+// ==============================
+model WalletLog {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String   @db.ObjectId
+  type         String   // 'DEPOSIT' (nạp tiền) | 'PAY_PREMIUM' (trừ tiền mua gói)
+  amount       Float    // Luôn là số dương, chiều ghi chú trong type
+  balanceAfter Float    // Số dư ví sau biến động (đối chiếu dễ dàng)
+  note         String?
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+// ==============================
+// ĐƠN THANH TOÁN NẠP TIỀN (mô phỏng cổng payment gateway)
+// Tạo đơn -> khách trả tiền theo hướng dẫn -> xác nhận -> tiền về ví
+// ==============================
+model PaymentOrder {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String    @db.ObjectId
+  orderCode String    @unique // Mã đơn hiển thị nội dung chuyển khoản, VD: MT16900000001234
+  amount    Float
+  method    String    // 'BANK' | 'CARD' | 'MOMO'
+  status    String    @default("PENDING") // 'PENDING'|'PAID'|'CANCELLED'|'EXPIRED'
+  expiresAt DateTime // Hết hạn sau 15 phút không thanh toán
+  paidAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+// ==============================
+// GIAO DỊCH THU / CHI
+// ==============================
+model Transaction {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @db.ObjectId
+  amount      Float
+  type        String   // 'THU' hoặc 'CHI'
+  category    String
+  description String?
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  // Toạ độ nơi giao dịch diễn ra (ví dụ siêu thị, quán ăn), tuỳ chọn.
+  // MongoDB không cần kiểu địa lý riêng (như PostGIS) - lưu thẳng 2 field số thực.
+  latitude  Float?
+  longitude Float?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@index([userId, type])
+}
+
+// ==============================
+// NGÂN SÁCH THEO DANH MỤC / THÁNG
+// ==============================
+model Budget {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @db.ObjectId
+  category    String
+  limitAmount Float // Hạn mức chi tiêu tối đa trong tháng
+  month       String   // Định dạng 'YYYY-MM'
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, category, month])
+  @@index([userId, month])
+}
+
+// ==============================
+// MỤC TIÊU TIẾT KIỆM
+// ==============================
+model SavingsGoal {
+  id                  String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId              String    @db.ObjectId
+  name                String
+  targetAmount        Float // Số tiền mục tiêu
+  currentAmount       Float     @default(0) // Số tiền đã tích lũy
+  monthlyContribution Float? // Kế hoạch đóng góp mỗi tháng
+  deadline            DateTime?
+  status              String    @default("IN_PROGRESS") // 'IN_PROGRESS' | 'COMPLETED'
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ==============================
+// DANH MỤC MẶC ĐỊNH TOÀN HỆ THỐNG (Admin quản lý)
+// ==============================
+model Category {
+  id    String @id @default(auto()) @map("_id") @db.ObjectId
+  name  String @unique
+  icon  String @default("more-horizontal")
+  color String @default("#64748b")
+  type  String @default("BOTH") // 'CHI' | 'THU' | 'BOTH'
+}
+
+// ==============================
+// NHẬT KÝ SỬ DỤNG AI (phục vụ thống kê admin)
+// ==============================
+model AiLog {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String?  @db.ObjectId
+  endpoint     String // 'ai-insights' | 'ai-chat'
+  model        String
+  tokens       Int      @default(0)
+  costEstimate Float    @default(0) // Ước lượng chi phí (USD)
+  createdAt    DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+}
+
+// ==============================
+// CẤU HÌNH HỆ THỐNG (key-value)
+// ==============================
+model AppSetting {
+  key   String @id @map("_id")
+  value String
+}
+
+// ==============================
+// CHI TIÊU CỐ ĐỊNH HÀNG THÁNG
+// ==============================
+model FixedExpense {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @db.ObjectId
+  amount      Float
+  category    String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}

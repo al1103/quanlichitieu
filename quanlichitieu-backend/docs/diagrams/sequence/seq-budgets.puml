@@ -1,0 +1,63 @@
+@startuml Seq_Ngan_sach
+!theme plain
+title SEQUENCE - NGÂN SÁCH THEO DANH MỤC + CẢNH BÁO VƯỢT MỨC
+
+skinparam responseMessageBelowArrow true
+
+actor "Người dùng" as U
+participant "Frontend\nbudget.html" as FE
+participant "verifyToken" as MW
+participant "budget.controller" as C
+database "PostgreSQL\n(Prisma)" as DB
+
+== Đặt hạn mức ngân sách ==
+U -> FE : chọn danh mục (VD: Ăn uống),\nnhập hạn mức tháng này
+FE -> MW : POST /api/budgets\n{category, limitAmount, month?}
+MW -> C : createBudget()
+C -> C : validate category != rỗng,\nlimitAmount > 0,\nmonth đúng 'YYYY-MM' (mặc định: tháng hiện tại)
+
+alt Sai dữ liệu / sai định dạng tháng
+  C --> FE : 400 {error}
+else Hợp lệ
+  C -> DB : budget.create(...)
+  alt Đã tồn tại (unique userId+category+month)
+    DB --x C : lỗi unique P2002
+    C --> FE : 409 {error: "Ngân sách...đã tồn tại."}
+  else Tạo mới thành công
+    DB --> C : budget
+    C --> FE : 201 {id, category, limitAmount, month}
+  end
+end
+
+== Xem tiến độ + cảnh báo (luồng chính) ==
+U -> FE : mở trang Ngân sách
+FE -> MW : GET /api/budgets?month=2026-08
+MW -> C : getBudgets()
+C -> C : tính [start, end) của tháng
+
+par Truy vấn song song
+  C -> DB : findMany({userId, month})
+  DB --> C : danh sách budgets
+else
+  C -> DB : transaction.groupBy({by: ['category'],\nwhere: {userId, type:'CHI',\ncategory IN ..., date ∈ tháng},\n_sum: {amount}})
+  DB --> C : tổng thực chi từng danh mục
+end
+
+loop mỗi budget b
+  C -> C : spent = tổng thực chi (0 nếu chưa tiêu)\nremaining = max(limit - spent, 0)\npercentUsed = round(spent/limit*100)\nexceeded = spent > limit\nWARNING = percentUsed >= 80%
+end
+
+C --> FE : 200 [{category, limitAmount, spent,\nremaining, percentUsed, warning, exceeded}]
+
+alt percentUsed >= 80%
+  FE --> U : hiển thị nhãn "Cảnh báo" (cam/đỏ)\ntheo mockup budget.html
+else percentUsed < 80%
+  FE --> U : thanh tiến độ bình thường
+end
+
+== Sửa / Xoá ==
+FE -> MW : PUT /api/budgets/:id {limitAmount?...}\nDELETE /api/budgets/:id
+MW -> C : updateBudget() | deleteBudget()\n(findFirst theo id+userId → 404 nếu không thuộc sở hữu)
+C -> DB : update / deleteMany
+C --> FE : 200 kết quả (409 nếu sửa trùng unique)
+@enduml

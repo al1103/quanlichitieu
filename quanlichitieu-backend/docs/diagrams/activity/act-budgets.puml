@@ -1,0 +1,59 @@
+@startuml Act_Ngan_sach
+!theme plain
+title ACTIVITY - ĐẶT NGÂN SÁCH & TÍNH CẢNH BÁO VƯỢT MỨC
+
+start
+:Mở trang budget.html;
+:Chọn danh mục + nhập hạn mức tháng;
+
+if (limitAmount > 0?) then (không)
+  :400 "Hạn mức phải là số lớn hơn 0";
+  stop
+endif
+if (month đúng 'YYYY-MM'?) then (không)
+  :400 "Tháng không hợp lệ";
+  stop
+else (đạt)
+  :month trống → mặc định tháng hiện tại;
+endif
+
+:INSERT Budget (userId, category,\nlimitAmount, month);
+
+if (Trùng unique (user, category, month)?) then (có)
+  :409 "Ngân sách cho danh mục này\ntrong tháng đã tồn tại.";
+  stop
+else (không)
+  :201 Tạo thành công;
+endif
+
+partition "Tính tiến độ mỗi lần xem (GET /api/budgets)" {
+  :Lấy danh sách budgets của tháng;
+  :GROUP BY category các giao dịch CHI\ntrong [đầu tháng, cuối tháng);
+  while (Còn budget nào?) is (có)
+    :spent = tổng thực chi (mặc định 0);
+    :remaining = max(limit - spent, 0);
+    :percentUsed = round(spent/limit × 100);
+    if (percentUsed >= 80% ?) then (có)
+      :Gắn cờ WARNING = true;
+    else (không)
+      :Gắn cờ WARNING = false;
+    endif
+    if (spent > limit ?) then (có)
+      :exceeded = true;\nremaining = 0;
+    else (không)
+      :exceeded = false;
+    endif
+  endwhile (hết)
+  :Trả FE danh sách kèm % và cờ cảnh báo;
+}
+
+if (percentUsed >= 100% ?) then (có)
+  :FE hiển thị đỏ "Vượt mức";
+elseif (percentUsed >= 80% ?) then (có)
+  :FE hiển thị cam "Cảnh báo";
+else (bình thường)
+  :FE hiển thị xanh an toàn;
+endif
+
+stop
+@enduml

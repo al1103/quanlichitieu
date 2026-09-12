@@ -1,0 +1,9 @@
+node_modules/
+.env
+.env.*
+*.log
+logs/
+server/config.js
+quanlichitieu/server/config.js
+.DS_Store
+Thumbs.db

@@ -1,0 +1,75 @@
+@startuml Seq_Admin_Quan_tri
+!theme plain
+title SEQUENCE - QUẢN TRỊ HỆ THỐNG (Người dùng / Thống kê / Danh mục / Cấu hình AI)
+
+skinparam responseMessageBelowArrow true
+
+actor "Quản trị viên" as A
+actor "Người dùng bị khoá" as U
+participant "Frontend\n(quản trị)" as FE
+participant "verifyToken +\nrequireAdmin" as MW
+participant "admin.controller" as C
+database "PostgreSQL" as DB
+
+== Đăng nhập admin ==
+A -> FE : login admin@moneytrack.com
+FE -> MW : POST /api/auth/login
+MW -> DB : kiểm tra role = 'ADMIN'
+MW --> FE : 200 {token (role ADMIN)}
+
+== Xem & quản lý người dùng ==
+A -> FE : mở danh sách người dùng
+FE -> MW : GET /api/admin/users?q=...
+MW -> C : getUsers()
+C -> DB : findMany(include _count:\ntransactions/budgets/savingsGoals)
+DB --> C : users + đếm dữ liệu
+C --> FE : 200 [{..., counts}] (không có password)
+
+A -> FE : bấm "Khoá tài khoản" user X
+FE -> MW : PUT /api/admin/users/:id/status\n{status:'BLOCKED'}
+MW -> C : setUserStatus()
+C -> C : status hợp lệ? tự khoá chính mình?\n(→ 400 nếu tự khoá)
+C -> DB : user.update({status})
+C --> FE : 200 {message}
+
+U -> MW : gọi bất kỳ API với token cũ
+MW -> DB : tra cứu user theo token
+DB --> MW : status = 'BLOCKED'
+MW --> U : 403 {error: "...đã bị khóa..."}
+
+A -> FE : mở khoá
+FE -> MW : PUT .../status {status:'ACTIVE'}
+C -> DB : update → user dùng lại bình thường
+
+== Thống kê hệ thống ==
+A -> FE : xem dashboard admin
+FE -> MW : GET /api/admin/stats
+MW -> C : getStats()
+par
+  C -> DB : count users (total/active/blocked)\ncount transactions
+else
+  C -> DB : aggregate AiLog (số request,\ntokens, cost) toàn bộ + hôm nay
+else
+  C -> DB : groupBy AiLog top 5 user\nfindMany 10 log gần nhất
+end
+C --> FE : 200 {users, transactions,\nai:{totalRequests, todayRequests,\nestimatedCostTotal, topUsers, recentLogs}}
+
+== Quản lý danh mục toàn hệ thống ==
+A -> FE : thêm/sửa/xoá danh mục
+FE -> MW : POST|PUT|DELETE /api/admin/categories
+MW -> C : validate type ∈ CHI|THU|BOTH
+C -> DB : create/update/delete Category
+alt Trùng tên
+  DB --x C : P2002 unique
+  C --> FE : 409 {error}
+else OK
+  C --> FE : 200/201 (user thường thấy ngay\nqua GET /api/categories)
+end
+
+== Cấu hình AI ==
+A -> FE : đổi model / hạn mức ngày
+FE -> MW : PUT /api/admin/ai-settings\n{model?, dailyQuota?}
+MW -> C : updateAiSettings()
+C -> DB : setSetting('ollama_model'|'ai_daily_quota')
+C --> FE : 200 {model, dailyQuota}\n→ ảnh hưởng ngay các request AI sau đó
+@enduml

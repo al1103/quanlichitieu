@@ -1,0 +1,233 @@
+@startuml Class_Diagram_MoneyTrack
+!theme plain
+title SƠ ĐỒ LỚP - KIẾN TRÚC BACKEND MONEYTRACK (Express Layered + Prisma)
+
+skinparam classAttributeIconSize 0
+hide empty field
+
+' ================= LỚP ROUTES =================
+package "Presentation - Routes" #E8F0FE {
+  class AuthRoutes { +POST /register; +POST /login; +GET /me; +PUT /profile; +PUT /password }
+  class TransactionRoutes { +GET/POST /; +GET/PUT/DELETE /:id }
+  class BudgetRoutes { +GET/POST /; +PUT/DELETE /:id }
+  class SavingRoutes { +GET/POST /; +POST /:id/deposit; +PUT/DELETE /:id }
+  class CategoryRoutes { +GET / }
+  class StatsRoutes { +GET /summary; +GET /monthly; +GET /categories; +GET /trend }
+  class AiRoutes { +POST /ai-insights; +POST /ai-chat }
+  class AdminRoutes { +CRUD users/categories; +GET stats; +GET/PUT ai-settings }
+}
+
+' ================= MIDDLEWARE =================
+package "Middleware" #FFF4CE {
+  class VerifyToken {
+    +verifyToken(req,res,next)
+    -jwt.verify(token)
+    -kiểm tra status != BLOCKED
+    -gắn req.userId, req.user
+  }
+  class RequireAdmin {
+    +requireAdmin(req,res,next)
+    -check req.user.role == 'ADMIN'
+  }
+  class ErrorHandler {
+    +notFoundHandler() -> 404 JSON
+    +errorHandler(err) -> {error}
+  }
+}
+
+' ================= CONTROLLERS =================
+package "Controllers" #DFF6DD {
+  class AuthController {
+    +register(req,res)
+    +login(req,res)
+    +me(req,res)
+    +updateProfile(req,res)
+    +changePassword(req,res)
+    +getWallet(req,res)
+    +depositWallet(req,res)
+    +upgradePlan(req,res) «trừ ví -> tự PREMIUM»
+    +downgradePlan(req,res)
+    -signToken(userId) : String JWT
+  }
+  class TransactionController {
+    +getTransactions(req,res)
+    +createTransaction(req,res)
+    +getTransactionById(req,res)
+    +updateTransaction(req,res)
+    +deleteTransaction(req,res)
+    -parseTxFields(body) : data
+    -parseCoords(body) : {lat,lng}
+    -attachLocation(tx)
+    -setLocationSql(db,id,coords)
+  }
+  class BudgetController {
+    +getBudgets(req,res)
+    +createBudget(req,res)
+    +updateBudget(req,res)
+    +deleteBudget(req,res)
+  }
+  class SavingController {
+    +getSavingsGoals(req,res)
+    +createSavingsGoal(req,res)
+    +updateSavingsGoal(req,res)
+    +depositToGoal(req,res)
+    +deleteSavingsGoal(req,res)
+    -withPercent(goal)
+  }
+  class CategoryController {
+    +getCategories(req,res)
+    -ensureSeeded()
+  }
+  class StatsController {
+    +getSummary(req,res)
+    +getMonthlyTrend(req,res)
+    +getCategoryBreakdown(req,res)
+    +getDailyTrend(req,res)
+  }
+  class AiController {
+    +getInsights(req,res)
+    +chat(req,res)
+    -buildSystemPrompt(summary)
+    -checkPlan(user) «403 PLAN_REQUIRED nếu != PREMIUM»
+    -checkQuota(userId)
+    -logUsage(...)
+  }
+  class AdminController {
+    +getUsers / setUserStatus / setUserPlan
+    +getStats «+ phân bổ gói + doanh thu»
+    +categories CRUD
+    +getAiSettings / updateAiSettings
+  }
+  class PremiumConfig {
+    +PREMIUM_PRICE : Number = 99_000
+  }
+}
+
+' ================= SERVICE / CONFIG =================
+package "Config & Utils" #FDE7EF {
+  class OllamaService {
+    +callOllama(messages) : {content,tokens,model}
+    +resolveModel() : String
+    +estimateCost(in,out) : Number
+    -OLLAMA_URL : String
+  }
+  class SettingsService {
+    +getSetting(key) : String
+    +setSetting(key,value)
+    -DEFAULT_SETTINGS
+  }
+  class Helpers {
+    +ApiError(status,message)
+    +asyncHandler(fn)
+    +assert(cond,status,msg)
+    +monthRange('YYYY-MM')
+    +sanitizeUser(user)
+  }
+}
+
+' ================= DATA ACCESS =================
+package "Data Access" #EDE7F6 {
+  class PrismaClient <<singleton>> {
+    +$transaction(fn)
+    +$executeRaw(sql)
+    +$queryRaw(sql)
+  }
+}
+
+' ================= ENTITIES =================
+package "Entities - Prisma Models" #FEF3E2 {
+  class User {
+    +id : String
+    +email : String «unique»
+    +password : String
+    +name : String?
+    +bio/avatar : String?
+    +role/status : String
+    +plan : 'FREE'|'PREMIUM'
+    +walletBalance : Float
+  }
+  class WalletLog {
+    +id : String
+    +userId : String
+    +type : 'DEPOSIT'|'PAY_PREMIUM'
+    +amount : Float
+    +balanceAfter : Float
+    +note : String?
+  }
+  class Transaction {
+    +id : String
+    +userId : String
+    +amount : Float
+    +type : 'THU'|'CHI'
+    +category : String
+    +description : String?
+    +date : DateTime
+    +latitude : Float?
+    +longitude : Float?
+  }
+  class Budget {
+    +id : String
+    +userId : String
+    +category : String
+    +limitAmount : Float
+    +month : 'YYYY-MM'
+  }
+  class SavingsGoal {
+    +id : String
+    +userId : String
+    +name : String
+    +targetAmount/currentAmount : Float
+    +deadline : DateTime?
+    +status : String
+  }
+  class AiLog {
+    +id : String
+    +userId : String?
+    +endpoint/model : String
+    +tokens/costEstimate : Number
+  }
+}
+
+' ===== quan hệ routes -> controller =====
+AuthRoutes ..> AuthController
+TransactionRoutes ..> TransactionController
+BudgetRoutes ..> BudgetController
+SavingRoutes ..> SavingController
+CategoryRoutes ..> CategoryController
+StatsRoutes ..> StatsController
+AiRoutes ..> AiController
+AdminRoutes ..> AdminController
+
+' ===== middleware chặn trước =====
+TransactionRoutes ..> VerifyToken
+BudgetRoutes ..> VerifyToken
+SavingRoutes ..> VerifyToken
+CategoryRoutes ..> VerifyToken
+StatsRoutes ..> VerifyToken
+AiRoutes ..> VerifyToken
+AdminRoutes ..> RequireAdmin
+RequireAdmin ..> VerifyToken
+
+' ===== controllers -> data/config =====
+AuthController ..> PrismaClient
+TransactionController ..> PrismaClient
+BudgetController ..> PrismaClient
+SavingController ..> PrismaClient
+StatsController ..> PrismaClient
+AdminController ..> PrismaClient
+AiController ..> OllamaService
+AiController ..> SettingsService
+AdminController ..> SettingsService
+OllamaService ..> SettingsService
+AdminController ..> OllamaService
+
+' ===== entities =====
+User "1" *-- "0..*" Transaction
+User "1" *-- "0..*" Budget
+User "1" *-- "0..*" SavingsGoal
+User "1" o-- "0..*" AiLog
+User "1" *-- "0..*" WalletLog
+AiController ..> PremiumConfig
+AuthController ..> PremiumConfig
+
+@enduml

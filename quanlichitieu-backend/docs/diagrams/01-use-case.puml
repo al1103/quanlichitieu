@@ -1,0 +1,116 @@
+@startuml Soddo_Use_Case_MoneyTrack
+!theme plain
+title SƠ ĐỒ USE CASE - HỆ THỐNG QUẢN LÝ CHI TIÊU MONEYTRACK
+
+left to right direction
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+
+actor "Người dùng" as User
+actor "Khách (chưa đăng nhập)" as Guest
+actor "Quản trị viên" as Admin
+actor "Ollama Cloud\n(Dịch vụ AI)" as AI <<external>>
+
+Guest --|> User
+Admin --|> User
+
+rectangle "Hệ thống MoneyTrack" {
+  ' ===== NHÓM XÁC THỰC =====
+  package "Xác thực & Hồ sơ" {
+    usecase "UC01\nĐăng ký tài khoản" as UC01
+    usecase "UC02\nĐăng nhập" as UC02
+    usecase "UC03\nXem hồ sơ cá nhân" as UC03
+    usecase "UC04\nCập nhật hồ sơ\n(tên/email/bio/avatar)" as UC04
+    usecase "UC05\nĐổi mật khẩu" as UC05
+    usecase "Đăng xuất" as UC06
+  }
+
+  ' ===== NHÓM GIAO DỊCH =====
+  package "Quản lý Giao dịch" {
+    usecase "UC07\nXem danh sách giao dịch\n(lọc theo loại/tháng/từ khoá)" as UC07
+    usecase "UC08\nThêm giao dịch thu/chi\n(kèm toạ độ tuỳ chọn)" as UC08
+    usecase "UC09\nSửa giao dịch" as UC09
+    usecase "UC10\nXoá giao dịch" as UC10
+  }
+
+  ' ===== NHÓM NGÂN SÁCH & TIẾT KIỆM =====
+  package "Ngân sách & Tiết kiệm" {
+    usecase "UC11\nĐặt hạn mức ngân sách\ntheo danh mục/tháng" as UC11
+    usecase "UC12\nTheo dõi % chi tiêu\ncảnh báo vượt mức" as UC12
+    usecase "UC13\nQuản lý mục tiêu tiết kiệm" as UC13
+    usecase "UC14\nĐóng góp tiền vào\nmục tiêu (tự hoàn tất)" as UC14
+  }
+
+  ' ===== NHÓM THỐNG KÊ & DANH MỤC =====
+  package "Thống kê & Danh mục" {
+    usecase "UC15\nXem tổng quan\n(số dư/tổng thu/chi)" as UC15
+    usecase "UC16\nXem báo cáo theo tháng,\ndanh mục, xu hướng ngày" as UC16
+    usecase "UC17\nXem danh mục mặc định" as UC17
+  }
+
+  ' ===== NHÓM AI =====
+  package "Trợ lý AI" {
+    usecase "UC18\nNhận xét tài chính từ AI" as UC18
+    usecase "UC19\nChat với trợ lý AI" as UC19
+    usecase "Kiểm tra hạn mức\ncâu hỏi/ngày" as UC20
+  }
+
+  ' ===== NHÓM GÓI TÀI KHOẢN & VÍ TIỀN =====
+  package "Gói tài khoản & Ví tiền" {
+    usecase "UC25\nNạp tiền vào ví\n(cổng thanh toán mô phỏng)" as UC25
+    usecase "UC26\nNâng cấp gói Premium\n(TỰ ĐỘNG trừ tiền ví -> mở khoá AI)" as UC26
+    usecase "UC27\nHuỷ gói về Free" as UC27
+  }
+
+  ' ===== NHÓM ADMIN =====
+  package "Quản trị hệ thống" {
+    usecase "UC21\nQuản lý người dùng\n(xem/khoá/mở khoá)" as UC21
+    usecase "UC22\nXem thống kê hệ thống\n& usage AI" as UC22
+    usecase "UC23\nQuản lý danh mục\ntoàn hệ thống" as UC23
+    usecase "UC24\nCấu hình AI\n(model/hạn mức ngày)" as UC24
+  }
+}
+
+' ----- Khách -----
+Guest --> UC01
+Guest --> UC02
+
+' ----- Người dùng -----
+User --> UC03
+User --> UC04
+User --> UC05
+User --> UC06
+User --> UC07
+User --> UC08
+User --> UC09
+User --> UC10
+User --> UC11
+User --> UC12
+User --> UC13
+User --> UC14
+User --> UC15
+User --> UC16
+User --> UC17
+User --> UC18
+User --> UC19
+User --> UC25
+User --> UC26
+
+' ----- Quan hệ extend/include -----
+UC02 ..> UC01 : <<extend>>\n(chưa có tài khoản)
+UC08 .> UC12 : <<include>>\n(cập nhật thực chi)
+UC26 .> UC25 : <<extend>>\n(ví chưa đủ tiền -> phải nạp trước)
+UC18 ..> UC26 : <<extend>>\n(user gói Free bấm dùng AI)
+UC19 ..> UC20 : <<include>>
+UC18 ..> UC20 : <<include>>
+
+' ----- Admin -----
+Admin --> UC21
+Admin --> UC22
+Admin --> UC23
+Admin --> UC24
+
+' ----- Hệ thống ngoài -----
+UC18 ..> AI
+UC19 ..> AI
+@enduml

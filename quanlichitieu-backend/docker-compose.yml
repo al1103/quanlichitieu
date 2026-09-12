@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  # MongoDB chạy dạng "replica set" 1 node - Prisma bắt buộc replica set để dùng
+  # $transaction (nạp ví, mua gói Premium, xác nhận thanh toán...). Không cần
+  # tài khoản/mật khẩu cho môi trường dev cho gọn nhẹ.
+  mongo:
+    image: bitnami/mongodb:7.0
+    container_name: moneytrack_mongo
+    environment:
+      MONGODB_REPLICA_SET_MODE: primary
+      MONGODB_REPLICA_SET_NAME: rs0
+      MONGODB_ADVERTISED_HOSTNAME: 127.0.0.1
+      ALLOW_EMPTY_PASSWORD: "yes"
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/bitnami/mongodb
+    restart: always
+
+  # Giao diện quản trị Mongo tối giản, thay cho pgAdmin trước đây.
+  mongo-express:
+    image: mongo-express
+    container_name: moneytrack_mongo_express
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongo
+      ME_CONFIG_MONGODB_PORT: 27017
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mongo
+    restart: always
+
+volumes:
+  mongodata:

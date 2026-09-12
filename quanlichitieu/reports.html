@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thống kê & báo cáo - ChiLotus</title>
+
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+
+        extend: {
+          colors: {
+            slate: { 50:'#faf8f2', 100:'#f1ede2', 200:'#ddd6c6', 300:'#c8bfa9', 400:'#988f77', 500:'#7a715c', 600:'#5f5847', 700:'#4a4437', 800:'#33302a', 900:'#22201b' },
+            gray: { 100:'#efeadd', 200:'#ddd6c6' },
+            blue: { 50:'#e9f2ec', 200:'#bcd8c6', 400:'#4a8a68', 500:'#2f7050', 600:'#24593f', 700:'#1d4934' },
+            emerald: { 50:'#ecf3ea', 200:'#cadfce', 500:'#2f7050', 600:'#24593f' },
+            rose: { 50:'#f9ebe6', 100:'#f3dcd4', 200:'#f0cdc2', 400:'#cf6b52', 500:'#bc5539', 600:'#a34428' },
+            amber: { 50:'#faf1dc', 200:'#ecdcae', 400:'#d99e33', 500:'#c4871f', 600:'#a57218' },
+            purple: { 50:'#efeaf6', 600:'#6d5a8e' }
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- style.css: style nền chung. components.css: các class dùng chung (card, btn, nav-link...) -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body class="antialiased font-sans flex flex-col md:flex-row min-h-screen relative">
+
+  <!-- Nơi hiện thông báo (toast) góc phải màn hình -->
+  <div id="toast-container" class="fixed top-20 right-4 z-50 flex flex-col gap-2"></div>
+
+  <!-- Các khối layout dùng chung, được layout.js tải và chèn vào -->
+  <div id="layout-sidebar"></div>
+  <div id="layout-bottom-nav"></div>
+
+  <div class="flex-1 md:ml-64 flex flex-col min-h-screen pb-16 md:pb-0">
+    <div id="layout-header"></div>
+
+    <!-- ====== NỘI DUNG TRANG THỐNG KÊ & BÁO CÁO ====== -->
+    <main class="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full">
+
+      <div class="mb-6">
+        <p class="text-sm text-slate-500">Tổng hợp tình hình thu chi và phân tích theo danh mục.</p>
+      </div>
+
+      <!-- 3 thẻ tổng quan: Tổng thu / Tổng chi / Chênh lệch (main.js tự tính từ dữ liệu API) -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div class="card p-5">
+          <div class="stat-icon stat-icon-emerald mb-3">
+            <i data-icon="arrow-down-left" class="w-5 h-5"></i>
+          </div>
+          <p class="text-sm font-medium text-slate-500 mb-1">Tổng thu nhập</p>
+          <h3 id="report-total-income" class="text-2xl font-bold text-emerald-600">0 ₫</h3>
+        </div>
+        <div class="card p-5">
+          <div class="stat-icon stat-icon-rose mb-3">
+            <i data-icon="arrow-up-right" class="w-5 h-5"></i>
+          </div>
+          <p class="text-sm font-medium text-slate-500 mb-1">Tổng chi tiêu</p>
+          <h3 id="report-total-expense" class="text-2xl font-bold text-rose-600">0 ₫</h3>
+        </div>
+        <div class="card p-5">
+          <div class="stat-icon stat-icon-blue mb-3">
+            <i data-icon="wallet" class="w-5 h-5"></i>
+          </div>
+          <p class="text-sm font-medium text-slate-500 mb-1">Chênh lệch</p>
+          <h3 id="report-net" class="text-2xl font-bold text-slate-900">0 ₫</h3>
+        </div>
+      </div>
+
+      <!-- Khu vực biểu đồ: xu hướng thu/chi theo tháng + tỉ trọng chi tiêu theo danh mục -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <!-- Biểu đồ cột: Thu vs Chi theo từng tháng (6 tháng gần nhất) -->
+        <div class="card lg:col-span-2 p-5 md:p-6">
+          <h3 class="text-base font-semibold text-slate-900 mb-6">Thu chi theo tháng</h3>
+          <div class="h-64 w-full relative">
+            <canvas id="reportTrendChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Biểu đồ tròn: chi tiêu chia theo danh mục -->
+        <div class="card p-5 md:p-6 flex flex-col">
+          <h3 class="text-base font-semibold text-slate-900 mb-6">Chi tiêu theo danh mục</h3>
+          <div class="h-48 w-full relative mb-4 flex-1">
+            <canvas id="reportCategoryChart"></canvas>
+          </div>
+          <!-- Chú thích màu sắc cho từng danh mục, main.js tự sinh ra -->
+          <div id="reportCategoryLegend" class="space-y-2 text-sm"></div>
+        </div>
+      </div>
+
+      <!-- Nhận xét chi tiêu từ AI (gọi qua server/server.js -> Ollama Cloud) -->
+      <div class="card p-5 md:p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-base font-semibold text-slate-900">Nhận xét từ AI</h3>
+          <button id="ai-insight-btn" class="btn btn-secondary text-sm">
+            <i data-icon="sparkles" class="w-4 h-4"></i>
+            <span>Phân tích chi tiêu</span>
+          </button>
+        </div>
+        <div id="ai-insight-content" class="text-sm text-slate-500 whitespace-pre-line">
+          Bấm "Phân tích chi tiêu" để AI tổng hợp nhận xét dựa trên dữ liệu thu chi của bạn.
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <div id="layout-modal"></div>
+  <div id="layout-chatbot"></div>
+
+  <script src="js/api.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+@startuml Act_Admin_Khoa_user
+!theme plain
+title ACTIVITY - ADMIN: QUẢN LÝ NGƯỜI DÙNG (KHOÁ / MỞ KHOÁ)
+
+start
+:Admin đăng nhập\n(admin@moneytrack.com);
+:Xác thực JWT;
+
+if (role == 'ADMIN'?) then (không)
+  :403 "Chức năng này chỉ dành cho quản trị viên.";
+  stop
+else (có)
+endif
+
+:Mở danh sách người dùng\nGET /api/admin/users?q=từ khoá;
+:Hiển thị user + số liệu kèm theo\n(số giao dịch, ngân sách, mục tiêu);
+
+if (Hành động?) then (Khoá)
+  :PUT /api/admin/users/:id/status\n{status:'BLOCKED'};
+  if (Tự khoá chính mình?) then (có)
+    :400 "Bạn không thể tự khóa chính mình.";
+    stop
+  elseif (User không tồn tại?) then (có)
+    :404;
+    stop
+  else (OK)
+    :UPDATE status='BLOCKED';
+    :200 "Đã khóa tài khoản ...";
+    note right
+      User đó gọi API nào với token cũ
+      cũng bị verifyToken chặn:
+      403 "tài khoản đã bị khóa"
+      (dù token chưa hết hạn)
+    end note
+  endif
+
+elseif (Mở khoá) then (unblock)
+  :PUT ... {status:'ACTIVE'};
+  :UPDATE status='ACTIVE';
+  :User hoạt động lại bình thường;
+  stop
+
+else (Xem thống kê hệ thống)
+  :GET /api/admin/stats;
+  :users total/active/blocked;\ntransactions total;
+  :AI: tổng request, request hôm nay,\ntokens, chi phí ước lượng;\ntop 5 user dùng AI; 10 log gần nhất;
+  stop
+endif
+
+stop
+@enduml
