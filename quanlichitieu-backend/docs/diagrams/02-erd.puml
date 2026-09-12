@@ -15,8 +15,7 @@ entity "users (Người dùng)" as users {
   avatar : STRING
   * role : STRING = 'USER' | 'ADMIN'
   * status : STRING = 'ACTIVE' | 'BLOCKED'
-  * plan : STRING = 'FREE' | 'PREMIUM' <<Premium mới dùng AI>>
-  * wallet_balance : DOUBLE = 0 <<Ví nạp tiền mua gói>>
+  * wallet_balance : DOUBLE = 0 <<Ví nạp tiền>>
   * created_at : DATETIME
   * updated_at : DATETIME
 }
@@ -25,7 +24,7 @@ entity "wallet_logs (Lịch sử ví tiền)" as walletlogs {
   * **_id** : ObjectId <<PK>>
   --
   * user_id : ObjectId <<FK -> users._id>>
-  * type : STRING = 'DEPOSIT' | 'PAY_PREMIUM'
+  * type : STRING = 'DEPOSIT'
   * amount : DOUBLE > 0
   * balance_after : DOUBLE
   note : STRING

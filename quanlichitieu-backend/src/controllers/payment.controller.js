@@ -158,7 +158,6 @@ exports.confirmCheckout = asyncHandler(async (req, res) => {
     message: `Thanh toán thành công! Đã nạp ${fmtVnd(fresh.amount)}₫ vào ví.`,
     orderCode: fresh.orderCode,
     balance: result.walletBalance,
-    plan: result.plan,
   });
 });
 

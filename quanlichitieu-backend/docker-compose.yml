@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   # MongoDB chạy dạng "replica set" 1 node - Prisma bắt buộc replica set để dùng
-  # $transaction (nạp ví, mua gói Premium, xác nhận thanh toán...). Không cần
+  # $transaction (nạp ví, xác nhận thanh toán...). Không cần
   # tài khoản/mật khẩu cho môi trường dev cho gọn nhẹ.
   mongo:
     image: bitnami/mongodb:7.0

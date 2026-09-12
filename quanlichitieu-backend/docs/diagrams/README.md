@@ -10,8 +10,8 @@ Toàn bộ sơ đồ viết bằng **PlantUML** (.puml). Mở bằng:
 
 | # | Loại sơ đồ | File | Phạm vi |
 |---|------------|------|---------|
-| 1 | **Use Case Diagram** | `01-use-case.puml` | Toàn hệ thống: 27 use case, 4 actor (Khách, User, Admin, Ollama Cloud) |
-| 2 | **ERD** | `02-erd.puml` | 8 bảng: users (+plan/ví), transactions (kèm toạ độ), budgets, savings_goals, categories, ai_logs, wallet_logs, app_settings |
+| 1 | **Use Case Diagram** | `01-use-case.puml` | Toàn hệ thống: use case, 4 actor (Khách, User, Admin, Ollama Cloud) |
+| 2 | **ERD** | `02-erd.puml` | 8 bảng: users (+ví), transactions (kèm toạ độ), budgets, savings_goals, categories, ai_logs, wallet_logs, app_settings |
 | 3 | **Class Diagram** | `03-class-diagram.puml` | Kiến trúc layered: Routes → Middleware → Controllers → Prisma → Entities |
 
 ## Sequence Diagram (theo chức năng)
@@ -19,12 +19,11 @@ Toàn bộ sơ đồ viết bằng **PlantUML** (.puml). Mở bằng:
 | Chức năng | File |
 |-----------|------|
 | Đăng ký / Đăng nhập / Hồ sơ / Đổi mật khẩu | `sequence/seq-auth.puml` |
-| **Nạp tiền ví → TỰ ĐỘNG nâng cấp Premium** | `sequence/seq-upgrade.puml` |
 | Giao dịch: thêm / xem / lọc / sửa / xoá (+ toạ độ) | `sequence/seq-transactions.puml` |
 | Ngân sách: đặt hạn mức + tính % + cảnh báo | `sequence/seq-budgets.puml` |
 | Tiết kiệm: tạo mục tiêu + deposit tự hoàn tất | `sequence/seq-savings.puml` |
 | Thống kê: summary / monthly / categories / trend | `sequence/seq-stats.puml` |
-| Trợ lý AI: insights + chatbot + chặn gói Free + quota + log | `sequence/seq-ai.puml` |
+| Trợ lý AI: insights + chatbot + quota + log | `sequence/seq-ai.puml` |
 | Admin: khoá/mở user, thống kê, danh mục, cấu hình AI | `sequence/seq-admin.puml` |
 
 ## Activity Diagram (theo chức năng)
@@ -38,4 +37,4 @@ Toàn bộ sơ đồ viết bằng **PlantUML** (.puml). Mở bằng:
 | Admin: khoá/mở khoá user + thống kê hệ thống | `activity/act-admin-block.puml` |
 
 > Sơ đồ khớp 100% với code đang chạy trong `src/` và schema trong `prisma/schema.prisma`
-> (đã được kiểm chứng bởi bộ test `scripts/api.test.js` — 83 case PASS).
+> (đã được kiểm chứng bởi bộ test `scripts/api.test.js`).

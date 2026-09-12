@@ -68,7 +68,7 @@ async function upsertUser(email, password, name, role) {
   return prisma.user.upsert({
     where: { email },
     update: {}, // Không đè dữ liệu cũ khi chạy lại
-    create: { email, password: hashed, name, role, plan: 'PREMIUM' }, // Tài khoản mẫu dùng thử AI luôn
+    create: { email, password: hashed, name, role },
   });
 }
 

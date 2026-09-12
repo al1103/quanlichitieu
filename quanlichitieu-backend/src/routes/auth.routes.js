@@ -13,7 +13,7 @@ router.get('/me', verifyToken, authController.me);
 router.put('/profile', verifyToken, authController.updateProfile);
 router.put('/password', verifyToken, authController.changePassword);
 
-// Ví tiền & nâng cấp gói Premium
+// Ví tiền
 // Nạp tiền phải qua CỔNG THANH TOÁN có quy trình:
 //   tạo đơn -> chuyển khoản/thẻ+OTP/ví -> xác nhận -> tiền mới về ví
 router.get('/wallet', verifyToken, authController.getWallet);
@@ -22,8 +22,5 @@ router.post('/wallet/checkout', verifyToken, paymentController.createCheckout);
 router.post('/wallet/checkout/:orderCode/confirm', verifyToken, paymentController.confirmCheckout);
 router.post('/wallet/checkout/:orderCode/cancel', verifyToken, paymentController.cancelCheckout);
 router.get('/wallet/orders', verifyToken, paymentController.listOrders);
-
-router.post('/upgrade', verifyToken, authController.upgradePlan);
-router.post('/downgrade', verifyToken, authController.downgradePlan);
 
 module.exports = router;

@@ -189,13 +189,12 @@ async function sectionAuth() {
     eq(status, 400, 'HTTP status');
   });
 
-  await test('Đăng ký U1 thành công -> trả token + user (KHÔNG lộ password, gói mặc định FREE)', async () => {
+  await test('Đăng ký U1 thành công -> trả token + user (KHÔNG lộ password)', async () => {
     const { status, data } = await req('POST', '/api/auth/register', { body: U1 });
     eq(status, 201, 'HTTP status');
     ok(typeof data.token === 'string' && data.token.length > 20, 'Thiếu/cấu token');
     eq(data.user.email, U1.email, 'user.email');
     eq(data.user.name, U1.name, 'user.name');
-    eq(data.user.plan, 'FREE', 'plan mặc định khi đăng ký');
     ok(!('password' in data.user), 'Response làm lộ password!');
     u1Token = data.token;
     u1Id = data.user.id;
@@ -334,12 +333,10 @@ async function depositViaCheckout(token, amount, method = 'BANK') {
 async function sectionWallet() {
   console.log('\n=== B2. Ví tiền & luồng thanh toán nạp tiền có quy trình ===');
 
-  await test('GET /wallet ban đầu: số dư 0, gói FREE, có giá Premium + danh sách orders', async () => {
+  await test('GET /wallet ban đầu: số dư 0, có danh sách orders', async () => {
     const { status, data } = await req('GET', '/api/auth/wallet', { token: u1Token });
     eq(status, 200, 'HTTP status');
     eq(data.balance, 0, 'balance');
-    eq(data.plan, 'FREE', 'plan');
-    eq(data.premiumPrice, 99_000, 'premiumPrice');
     ok(Array.isArray(data.logs), 'logs là mảng');
     ok(Array.isArray(data.orders), 'orders là mảng');
   });
@@ -471,13 +468,6 @@ async function sectionWallet() {
     ok(/hết hạn/i.test(data.error || ''), `Thông báo nên nhắc hết hạn: ${data.error}`);
   });
 
-  await test('Upgrade khi ví không đủ (< 99.000đ) -> 400 INSUFFICIENT_BALANCE', async () => {
-    const { status, data } = await req('POST', '/api/auth/upgrade', { token: u1Token });
-    eq(status, 400, 'HTTP status'); // ví đang 50.000đ
-    eq(data.code, 'INSUFFICIENT_BALANCE', 'code lỗi nghiệp vụ');
-    ok(/nạp thêm/i.test(data.error || ''), 'Thông báo nhắc nạp thêm tiền');
-  });
-
   let cardOrderCode;
   await test('BƯỚC 1 - Tạo đơn thẻ ATM 100.000đ -> hướng dẫn nhập thẻ', async () => {
     const { status, data } = await req('POST', '/api/auth/wallet/checkout', {
@@ -508,25 +498,6 @@ async function sectionWallet() {
     });
     eq(status, 200, 'HTTP status');
     eq(data.balance, 150_000, 'balance (50k + 100k)');
-  });
-
-  await test('UPGRADE TỰ ĐỘNG: trừ 99.000đ -> plan PREMIUM, ví còn 51.000đ', async () => {
-    const { status, data } = await req('POST', '/api/auth/upgrade', { token: u1Token });
-    eq(status, 200, 'HTTP status');
-    eq(data.plan, 'PREMIUM', 'plan sau nâng cấp');
-    eq(data.balance, 51_000, 'ví bị trừ đúng giá gói');
-    eq(data.user.plan, 'PREMIUM', 'user trả về đã là PREMIUM');
-
-    const me = await req('GET', '/api/auth/me', { token: u1Token });
-    eq(me.data.plan, 'PREMIUM', 'plan trong /me');
-
-    const wallet = await req('GET', '/api/auth/wallet', { token: u1Token });
-    eq(wallet.data.logs[0].type, 'PAY_PREMIUM', 'Log PAY_PREMIUM mới nhất');
-  });
-
-  await test('Nâng cấp lần nữa khi đã Premium -> 400', async () => {
-    const { status } = await req('POST', '/api/auth/upgrade', { token: u1Token });
-    eq(status, 400, 'HTTP status');
   });
 }
 
@@ -1052,13 +1023,6 @@ async function sectionAi() {
     eq(status, 400, 'HTTP status');
   });
 
-  await test('User gói FREE (U2) gọi AI -> 403 PLAN_REQUIRED (chưa nạp tiền nâng cấp)', async () => {
-    const { status, data } = await req('POST', '/api/ai-insights', { token: u2Token, body: { summary } });
-    eq(status, 403, 'HTTP status');
-    eq(data.code, 'PLAN_REQUIRED', 'code');
-    ok(/premium/i.test(data.error || ''), 'Thông báo nên nhắc gói Premium');
-  });
-
   await test('POST /api/ai-insights có nội dung -> nhận insight thật từ AI', async () => {
     let out;
     try {
@@ -1113,24 +1077,6 @@ async function sectionAi() {
     // trả lại quota mặc định
     const restore = await req('PUT', '/api/admin/ai-settings', { token: adminToken, body: { dailyQuota: 50 } });
     eq(restore.status, 200, 'HTTP status trả lại quota');
-  });
-
-  await test('Hạ về Free -> AI bị chặn lại; nạp thêm tiền + nâng cấp lại OK', async () => {
-    // Hạ gói (không hoàn tiền)
-    const down = await req('POST', '/api/auth/downgrade', { token: u1Token });
-    eq(down.status, 200, 'HTTP status hạ gói');
-    eq(down.data.plan, 'FREE', 'plan sau hạ');
-
-    const blocked = await req('POST', '/api/ai-insights', { token: u1Token, body: { summary } });
-    eq(blocked.status, 403, 'AI bị chặn ngay sau khi về Free');
-    eq(blocked.data.code, 'PLAN_REQUIRED', 'code');
-
-    // Nạp thêm 100.000đ (ví đang 51.000đ) qua luồng checkout rồi mua lại gói -> còn 52.000đ
-    const dep = await depositViaCheckout(u1Token, 100_000);
-    eq(dep.balance, 151_000, 'balance trước khi mua lại');
-    const up = await req('POST', '/api/auth/upgrade', { token: u1Token });
-    eq(up.status, 200, 'Mua lại gói thành công');
-    eq(up.data.balance, 52_000, 'Ví sau khi mua lại gói');
   });
 }
 
@@ -1206,36 +1152,12 @@ async function sectionAdmin() {
     eq(status, 400, 'HTTP status');
   });
 
-  await test('Admin set plan user: PREMIUM -> /me thấy ngay; rồi trả về FREE', async () => {
-    const users = await req('GET', `/api/admin/users?q=${encodeURIComponent(U2.email)}`, { token: adminToken });
-    const u2Id = users.data[0].id;
-
-    const put = await req('PUT', `/api/admin/users/${u2Id}/plan`, {
-      token: adminToken,
-      body: { plan: 'PREMIUM' },
-    });
-    eq(put.status, 200, 'HTTP status set plan');
-    eq(put.data.plan, 'PREMIUM', 'plan trong response');
-
-    const me = await req('GET', '/api/auth/me', { token: u2Token });
-    eq(me.data.plan, 'PREMIUM', 'U2 nhận gói mới ngay');
-
-    // plan sai giá trị -> 400
-    const bad = await req('PUT', `/api/admin/users/${u2Id}/plan`, { token: adminToken, body: { plan: 'GOLD' } });
-    eq(bad.status, 400, 'HTTP status plan không hợp lệ');
-
-    await req('PUT', `/api/admin/users/${u2Id}/plan`, { token: adminToken, body: { plan: 'FREE' } });
-  });
-
-  await test('GET /admin/stats -> có phân bổ gói + doanh thu Premium', async () => {
+  await test('GET /admin/stats -> có tổng quan users/transactions/AI', async () => {
     const { status, data } = await req('GET', '/api/admin/stats', { token: adminToken });
     eq(status, 200, 'HTTP status');
     ok(data.users.total >= 3, 'users.total');
     ok(data.users.active >= 3, 'users.active');
     ok(data.transactions.total >= 5, 'transactions.total');
-    ok(Number.isInteger(data.plans.free) && data.plans.free >= 1, `plans.free = ${data.plans.free}`);
-    ok(Number.isInteger(data.plans.premium) && data.plans.premium >= 1, `plans.premium = ${data.plans.premium}`);
-    ok(typeof data.revenue === 'number' && data.revenue >= 99_000, `revenue (tối thiểu 1 lần mua gói từ section ví) = ${data.revenue}`);
     ok(typeof data.ai.totalRequests === 'number', 'ai.totalRequests');
     ok(Array.isArray(data.ai.recentLogs), 'ai.recentLogs là mảng');
   });

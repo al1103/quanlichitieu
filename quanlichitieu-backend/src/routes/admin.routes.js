@@ -8,7 +8,6 @@ router.use(verifyToken, requireAdmin);
 
 router.get('/users', adminController.getUsers);
 router.put('/users/:id/status', adminController.setUserStatus);
-router.put('/users/:id/plan', adminController.setUserPlan);
 
 router.get('/stats', adminController.getStats);
 
