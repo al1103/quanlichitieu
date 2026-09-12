@@ -8,22 +8,9 @@
  * và bị giới hạn bởi hạn mức câu hỏi AI mỗi ngày (AppSetting 'ai_daily_quota').
  */
 const prisma = require('../config/db');
-const { ApiError, asyncHandler, assert, requireFields, startOfToday } = require('../utils/helpers');
+const { asyncHandler, assert, requireFields, startOfToday } = require('../utils/helpers');
 const { getSetting } = require('../utils/settings');
 const { callOllama, estimateCost } = require('../config/ollama');
-
-// AI là tính năng trả phí: chỉ tài khoản gói PREMIUM mới được dùng.
-// (User nâng cấp bằng cách nạp tiền vào ví rồi mua gói - xem auth.controller)
-function checkPlan(user) {
-  if (user.plan !== 'PREMIUM') {
-    const err = new ApiError(
-      403,
-      'Chức năng AI chỉ dành cho gói Premium. Vui lòng nạp tiền và nâng cấp gói để sử dụng.'
-    );
-    err.code = 'PLAN_REQUIRED'; // FE dựa vào code này để hiện nút "Nâng cấp"
-    throw err;
-  }
-}
 
 // Giữ nguyên giọng điệu như server cũ của FE
 function buildSystemPrompt(summary) {
@@ -63,7 +50,6 @@ async function logUsage(userId, endpoint, result) {
 // POST /api/ai-insights
 exports.getInsights = asyncHandler(async (req, res) => {
   requireFields(req.body, ['summary']);
-  checkPlan(req.user);
   await checkQuota(req.userId);
 
   const messages = [
@@ -81,7 +67,6 @@ exports.getInsights = asyncHandler(async (req, res) => {
 exports.chat = asyncHandler(async (req, res) => {
   requireFields(req.body, ['message']);
   assert(String(req.body.message).trim() !== '', 400, 'Câu hỏi không được để trống.');
-  checkPlan(req.user);
   await checkQuota(req.userId);
 
   // Chỉ giữ tối đa 10 lượt hội thoại gần nhất, đúng như server cũ của FE

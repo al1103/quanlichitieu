@@ -1107,9 +1107,6 @@ document.addEventListener('layoutLoaded', () => {
       try {
         const s = await apiAdminGetStats();
         document.getElementById('st-users').textContent = s.users.total;
-        document.getElementById('st-premium').textContent = s.plans.premium;
-        document.getElementById('st-free').textContent = s.plans.free;
-        document.getElementById('st-revenue').textContent = formatCurrency(s.revenue);
         document.getElementById('st-ai-today').textContent = s.ai.todayRequests;
         document.getElementById('st-transactions').textContent = s.transactions.total;
 
@@ -1127,7 +1124,7 @@ document.addEventListener('layoutLoaded', () => {
       }
     };
 
-    // ---- Quản lý người dùng: tìm kiếm / khoá-mở / đổi gói ----
+    // ---- Quản lý người dùng: tìm kiếm / khoá-mở ----
     const usersTbody = document.getElementById('admin-users-tbody');
 
     const renderUsers = async (q = '') => {
@@ -1149,12 +1146,6 @@ document.addEventListener('layoutLoaded', () => {
                 <p class="text-xs text-slate-500">${u.email}</p>
               </td>
               <td class="px-5 py-3">${roleBadge}</td>
-              <td class="px-5 py-3">
-                <select class="form-input !py-1 !px-2 !text-xs w-auto admin-plan-select" data-id="${u.id}" data-email="${u.email}" ${u.role === 'ADMIN' ? 'disabled' : ''}>
-                  <option value="FREE" ${u.plan === 'FREE' ? 'selected' : ''}>Free</option>
-                  <option value="PREMIUM" ${u.plan === 'PREMIUM' ? 'selected' : ''}>Premium</option>
-                </select>
-              </td>
               <td class="px-5 py-3 text-xs text-slate-500">
                 ${u.counts.transactions} GD • ${u.counts.budgets} NS • ${u.counts.savingsGoals} TK
               </td>
@@ -1177,18 +1168,6 @@ document.addEventListener('layoutLoaded', () => {
               showToast(res.message);
               renderUsers(document.getElementById('admin-user-search').value.trim());
             } catch (error) { showToast(error.message, 'error'); }
-          });
-        });
-
-        usersTbody.querySelectorAll('.admin-plan-select').forEach(sel => {
-          sel.addEventListener('change', async () => {
-            try {
-              const res = await apiAdminSetUserPlan(sel.dataset.id, sel.value);
-              showToast(`${sel.dataset.email}: ${res.message}`);
-            } catch (error) {
-              showToast(error.message, 'error');
-              renderUsers(document.getElementById('admin-user-search').value.trim()); // trả lại giá trị cũ
-            }
           });
         });
       } catch (error) {

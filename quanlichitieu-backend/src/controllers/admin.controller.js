@@ -64,33 +64,13 @@ exports.setUserStatus = asyncHandler(async (req, res) => {
   res.json({ message: `Đã ${req.body.status === 'BLOCKED' ? 'khóa' : 'mở khóa'} tài khoản ${updated.email}.` });
 });
 
-// PUT /api/admin/users/:id/plan  body: { plan: 'FREE' | 'PREMIUM' }
-// Admin có thể chủ động nâng cấp/hạ gói cho người dùng (VD: tặng Premium)
-exports.setUserPlan = asyncHandler(async (req, res) => {
-  requireFields(req.body, ['plan']);
-  assert(['FREE', 'PREMIUM'].includes(req.body.plan), 400, "Gói tài khoản chỉ nhận 'FREE' hoặc 'PREMIUM'.");
-
-  const userId = req.params.id;
-  assert(isValidObjectId(userId), 400, 'ID người dùng không hợp lệ.');
-
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  assert(user, 404, 'Không tìm thấy người dùng.');
-
-  const updated = await prisma.user.update({
-    where: { id: userId },
-    data: { plan: req.body.plan },
-  });
-
-  res.json({ message: `Đã chuyển gói của ${updated.email} sang ${updated.plan}.`, plan: updated.plan });
-});
-
 // ---------- THỐNG KÊ TỔNG QUAN ----------
 
 // GET /api/admin/stats
 exports.getStats = asyncHandler(async (req, res) => {
   const startOfDay = startOfToday();
 
-  const [totalUsers, activeUsers, blockedUsers, totalTransactions, aiAgg, aiTodayAgg, freeUsers, premiumUsers, revenueAgg] =
+  const [totalUsers, activeUsers, blockedUsers, totalTransactions, aiAgg, aiTodayAgg] =
     await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { status: 'ACTIVE' } }),
@@ -102,9 +82,6 @@ exports.getStats = asyncHandler(async (req, res) => {
         _sum: { tokens: true, costEstimate: true },
         where: { createdAt: { gte: startOfDay } },
       }),
-      prisma.user.count({ where: { plan: 'FREE' } }),
-      prisma.user.count({ where: { plan: 'PREMIUM' } }),
-      prisma.walletLog.aggregate({ _sum: { amount: true }, where: { type: 'PAY_PREMIUM' } }),
     ]);
 
   // Top 5 người dùng dùng AI nhiều nhất
@@ -133,8 +110,6 @@ exports.getStats = asyncHandler(async (req, res) => {
 
   res.json({
     users: { total: totalUsers, active: activeUsers, blocked: blockedUsers },
-    plans: { free: freeUsers, premium: premiumUsers }, // Phân bổ gói tài khoản
-    revenue: revenueAgg._sum.amount || 0, // Doanh thu gói Premium (tổng tiền đã thanh toán)
     transactions: { total: totalTransactions },
     ai: {
       totalRequests: aiAgg._count,

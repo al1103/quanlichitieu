@@ -19,8 +19,7 @@ model User {
   avatar       String?
   role         String        @default("USER") // 'USER' | 'ADMIN'
   status       String        @default("ACTIVE") // 'ACTIVE' | 'BLOCKED'
-  plan          String        @default("FREE") // 'FREE' | 'PREMIUM' — chỉ gói PREMIUM mới dùng được AI
-  walletBalance Float         @default(0) // Số dư ví: nạp tiền vào đây để mua gói Premium
+  walletBalance Float         @default(0) // Số dư ví: nạp tiền vào đây
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
@@ -34,12 +33,12 @@ model User {
 }
 
 // ==============================
-// LỊCH SỬ BIẾN ĐỘNG VÍ TIỀN (nạp tiền / thanh toán gói Premium)
+// LỊCH SỬ BIẾN ĐỘNG VÍ TIỀN (nạp tiền)
 // ==============================
 model WalletLog {
   id           String   @id @default(auto()) @map("_id") @db.ObjectId
   userId       String   @db.ObjectId
-  type         String   // 'DEPOSIT' (nạp tiền) | 'PAY_PREMIUM' (trừ tiền mua gói)
+  type         String   // 'DEPOSIT' (nạp tiền)
   amount       Float    // Luôn là số dương, chiều ghi chú trong type
   balanceAfter Float    // Số dư ví sau biến động (đối chiếu dễ dàng)
   note         String?

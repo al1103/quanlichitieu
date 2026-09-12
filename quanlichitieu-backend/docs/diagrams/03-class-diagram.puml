@@ -45,8 +45,6 @@ package "Controllers" #DFF6DD {
     +changePassword(req,res)
     +getWallet(req,res)
     +depositWallet(req,res)
-    +upgradePlan(req,res) «trừ ví -> tự PREMIUM»
-    +downgradePlan(req,res)
     -signToken(userId) : String JWT
   }
   class TransactionController {
@@ -88,18 +86,14 @@ package "Controllers" #DFF6DD {
     +getInsights(req,res)
     +chat(req,res)
     -buildSystemPrompt(summary)
-    -checkPlan(user) «403 PLAN_REQUIRED nếu != PREMIUM»
     -checkQuota(userId)
     -logUsage(...)
   }
   class AdminController {
-    +getUsers / setUserStatus / setUserPlan
-    +getStats «+ phân bổ gói + doanh thu»
+    +getUsers / setUserStatus
+    +getStats
     +categories CRUD
     +getAiSettings / updateAiSettings
-  }
-  class PremiumConfig {
-    +PREMIUM_PRICE : Number = 99_000
   }
 }
 
@@ -143,13 +137,12 @@ package "Entities - Prisma Models" #FEF3E2 {
     +name : String?
     +bio/avatar : String?
     +role/status : String
-    +plan : 'FREE'|'PREMIUM'
     +walletBalance : Float
   }
   class WalletLog {
     +id : String
     +userId : String
-    +type : 'DEPOSIT'|'PAY_PREMIUM'
+    +type : 'DEPOSIT'
     +amount : Float
     +balanceAfter : Float
     +note : String?
@@ -227,7 +220,5 @@ User "1" *-- "0..*" Budget
 User "1" *-- "0..*" SavingsGoal
 User "1" o-- "0..*" AiLog
 User "1" *-- "0..*" WalletLog
-AiController ..> PremiumConfig
-AuthController ..> PremiumConfig
 
 @enduml

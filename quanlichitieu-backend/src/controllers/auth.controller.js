@@ -1,21 +1,18 @@
 /**
- * Xác thực & hồ sơ cá nhân & Ví tiền - Gói tài khoản:
+ * Xác thực & hồ sơ cá nhân & Ví tiền:
  * - register / login : trả về { token, user } để Frontend lưu vào localStorage
  * - me               : thông tin user đang đăng nhập
  * - updateProfile    : cập nhật tên / email / tiểu sử / ảnh đại diện
  * - changePassword   : đổi mật khẩu (cần mật khẩu cũ)
  *
- * LUỒNG NẠP TIỀN -> TỰ ĐỘNG NÂNG CẤP GÓI PREMIUM (AI chỉ dành cho Premium):
- * - GET  /wallet         : số dư ví + giá gói Premium + lịch sử biến động
+ * VÍ TIỀN:
+ * - GET  /wallet         : số dư ví + lịch sử biến động
  * - POST /wallet/deposit : nạp tiền vào ví (cổng thanh toán mô phỏng)
- * - POST /upgrade        : TRỪ TIỀN TRONG VÍ -> tự động bật gói PREMIUM
- * - POST /downgrade      : hạ về gói Free (không hoàn tiền)
  */
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const prisma = require('../config/db');
 const { ApiError, asyncHandler, assert, requireFields, sanitizeUser, toNumber, EMAIL_RE } = require('../utils/helpers');
-const { PREMIUM_PRICE } = require('../config/premium');
 
 const signToken = (userId) =>
   jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -40,7 +37,7 @@ exports.register = asyncHandler(async (req, res) => {
   // 2. Mã hóa mật khẩu (Không bao giờ lưu mật khẩu gốc)
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  // 3. Tạo user mới (gói mặc định FREE, ví rỗng) và cấp token luôn
+  // 3. Tạo user mới (ví rỗng) và cấp token luôn
   const user = await prisma.user.create({
     data: { email, password: hashedPassword, name },
   });
@@ -142,10 +139,10 @@ exports.changePassword = asyncHandler(async (req, res) => {
 });
 
 // ============================================================
-// VÍ TIỀN & NÂNG CẤP GÓI PREMIUM (tự động sau khi trừ tiền)
+// VÍ TIỀN
 // ============================================================
 
-// GET /api/auth/wallet  — số dư + giá gói + lịch sử biến động + đơn nạp tiền gần nhất
+// GET /api/auth/wallet  — số dư + lịch sử biến động + đơn nạp tiền gần nhất
 exports.getWallet = asyncHandler(async (req, res) => {
   const [logs, orders] = await Promise.all([
     prisma.walletLog.findMany({
@@ -162,69 +159,7 @@ exports.getWallet = asyncHandler(async (req, res) => {
 
   res.json({
     balance: req.user.walletBalance || 0,
-    plan: req.user.plan,
-    premiumPrice: PREMIUM_PRICE,
     logs,
     orders, // Các đơn thanh toán nạp tiền (PENDING/PAID/CANCELLED/EXPIRED)
-  });
-});
-
-// POST /api/auth/upgrade
-// NÂNG CẤP TỰ ĐỘNG: nếu ví đủ tiền -> trừ tiền gói Premium và bật gói ngay.
-exports.upgradePlan = asyncHandler(async (req, res) => {
-  assert(req.user.plan !== 'PREMIUM', 400, 'Bạn đã đang dùng gói Premium.');
-  if (req.user.walletBalance < PREMIUM_PRICE) {
-    // FE dựa vào code này để hiện hộp "Nạp thêm tiền"
-    const err = new ApiError(
-      400,
-      `Số dư ví không đủ. Gói Premium giá ${fmtVnd(PREMIUM_PRICE)}₫, ví của bạn còn ${fmtVnd(req.user.walletBalance)}₫. Vui lòng nạp thêm ${fmtVnd(PREMIUM_PRICE - req.user.walletBalance)}₫.`
-    );
-    err.code = 'INSUFFICIENT_BALANCE';
-    throw err;
-  }
-
-  // Trừ tiền + bật gói + ghi lịch sử trong 1 transaction (hoặc tất cả, hoặc không gì cả)
-  const result = await prisma.$transaction(async (db) => {
-    const updated = await db.user.update({
-      where: { id: req.userId },
-      data: {
-        plan: 'PREMIUM',
-        walletBalance: { decrement: PREMIUM_PRICE },
-      },
-    });
-    await db.walletLog.create({
-      data: {
-        userId: req.userId,
-        type: 'PAY_PREMIUM',
-        amount: PREMIUM_PRICE,
-        balanceAfter: updated.walletBalance,
-        note: 'Thanh toán gói Premium (tự động nâng cấp)',
-      },
-    });
-    return updated;
-  });
-
-  res.json({
-    message: `Thanh toán thành công ${fmtVnd(PREMIUM_PRICE)}₫. Chúc mừng bạn đã nâng cấp gói Premium - trợ lý AI đã được mở khoá!`,
-    plan: result.plan,
-    balance: result.walletBalance,
-    user: sanitizeUser(result),
-  });
-});
-
-// POST /api/auth/downgrade  — hạ về Free (không hoàn tiền đã thanh toán)
-exports.downgradePlan = asyncHandler(async (req, res) => {
-  assert(req.user.plan !== 'FREE', 400, 'Bạn đang dùng gói Free.');
-
-  const updated = await prisma.user.update({
-    where: { id: req.userId },
-    data: { plan: 'FREE' },
-  });
-
-  res.json({
-    message: 'Đã chuyển về gói Free. Số dư ví được giữ nguyên.',
-    plan: updated.plan,
-    balance: updated.walletBalance,
-    user: sanitizeUser(updated),
   });
 });

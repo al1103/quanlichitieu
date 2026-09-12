@@ -231,14 +231,7 @@ async function apiAdminSetUserStatus(id, status) {
   });
 }
 
-async function apiAdminSetUserPlan(id, plan) {
-  return apiFetch(`/api/admin/users/${id}/plan`, {
-    method: 'PUT',
-    body: JSON.stringify({ plan })
-  });
-}
-
-// Thống kê hệ thống: users/plans/revenue/transactions/ai
+// Thống kê hệ thống: users/transactions/ai
 async function apiAdminGetStats() {
   return apiFetch('/api/admin/stats');
 }

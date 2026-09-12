@@ -16,18 +16,6 @@ participant "Ollama Cloud" as OLA
 U -> FE : mở Reports / bấm chatbot AI
 FE -> FE : buildFinanceSummaryText(transactions)\n"Tổng thu nhập: ...\nTổng chi tiêu: ...\nChi tiêu theo danh mục:..."
 
-== Chặn theo gói tài khoản (áp dụng cho cả insights & chat) ==
-FE -> MW : POST /api/ai-* (kèm token)
-MW -> C : controller AI
-C -> C : checkPlan(user): plan == 'PREMIUM' ?
-
-alt Người dùng gói FREE
-  C --> FE : 403 {code:'PLAN_REQUIRED',\nerror:"...nâng cấp gói..."}
-  FE --> U : hiện CTA "Nạp tiền & nâng cấp ngay"\n(link sang upgrade.html)
-else Gói Premium
-  C -> DB : count AiLog hôm nay (quota)
-end
-
 == Nhận xét tài chính (UC18) ==
 U -> FE : bấm "Phân tích chi tiêu"
 FE -> MW : POST /api/ai-insights\n{summary} + Bearer token

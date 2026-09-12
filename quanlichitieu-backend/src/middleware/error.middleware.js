@@ -19,7 +19,7 @@ const errorHandler = (err, req, res, next) => {
 
   res.status(status).json({
     error: err.message || 'Lỗi server không xác định.',
-    // Mã lỗi nghiệp vụ (VD: PLAN_REQUIRED) để FE biết đường xử lý (hiện nút nâng cấp...)
+    // Mã lỗi nghiệp vụ (VD: INSUFFICIENT_BALANCE) để FE biết đường xử lý
     ...(err.code ? { code: err.code } : {}),
   });
 };

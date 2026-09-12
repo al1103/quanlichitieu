@@ -55,11 +55,9 @@ rectangle "Hệ thống MoneyTrack" {
     usecase "Kiểm tra hạn mức\ncâu hỏi/ngày" as UC20
   }
 
-  ' ===== NHÓM GÓI TÀI KHOẢN & VÍ TIỀN =====
-  package "Gói tài khoản & Ví tiền" {
+  ' ===== NHÓM VÍ TIỀN =====
+  package "Ví tiền" {
     usecase "UC25\nNạp tiền vào ví\n(cổng thanh toán mô phỏng)" as UC25
-    usecase "UC26\nNâng cấp gói Premium\n(TỰ ĐỘNG trừ tiền ví -> mở khoá AI)" as UC26
-    usecase "UC27\nHuỷ gói về Free" as UC27
   }
 
   ' ===== NHÓM ADMIN =====
@@ -94,13 +92,10 @@ User --> UC17
 User --> UC18
 User --> UC19
 User --> UC25
-User --> UC26
 
 ' ----- Quan hệ extend/include -----
 UC02 ..> UC01 : <<extend>>\n(chưa có tài khoản)
 UC08 .> UC12 : <<include>>\n(cập nhật thực chi)
-UC26 .> UC25 : <<extend>>\n(ví chưa đủ tiền -> phải nạp trước)
-UC18 ..> UC26 : <<extend>>\n(user gói Free bấm dùng AI)
 UC19 ..> UC20 : <<include>>
 UC18 ..> UC20 : <<include>>
 
