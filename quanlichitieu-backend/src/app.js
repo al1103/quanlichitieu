@@ -12,6 +12,7 @@ const aiRoutes = require('./routes/ai.routes');
 const adminRoutes = require('./routes/admin.routes');
 const paymentsRoutes = require('./routes/payments.routes'); // Webhook cổng thanh toán (công khai)
 const fixedExpenseRoutes = require('./routes/fixed-expense.routes');
+const notificationRoutes = require('./routes/notification.routes');
 const { notFoundHandler, errorHandler } = require('./middleware/error.middleware');
 
 const app = express();
@@ -53,6 +54,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/fixed-expenses', fixedExpenseRoutes);
+app.use('/api/notifications', notificationRoutes);
 app.use('/api/payments', paymentsRoutes); // IPN MoMo: public, xác thực bằng chữ ký HMAC
 app.use('/api', aiRoutes); // /api/ai-insights + /api/ai-chat (giữ nguyên như FE đang gọi)
 

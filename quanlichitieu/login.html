@@ -178,10 +178,15 @@
           const data = await apiLogin(email, password);
           localStorage.setItem("token", data.token);
           localStorage.setItem("user", JSON.stringify(data.user));
-          window.location.href = "index.html";
+          
+          if (data.user && data.user.role && data.user.role.toUpperCase() === 'ADMIN') {
+            window.location.href = "admin.html";
+          } else {
+            window.location.href = "index.html";
+          }
         } catch (error) {
-          // Nếu server/DB lỗi -> Cho phép đăng nhập chế độ Demo luôn
-          enterDemoMode();
+          errorMsg.classList.remove("hidden");
+          errorMsg.textContent = error.message || "Đăng nhập thất bại. Vui lòng kiểm tra lại.";
         }
       });
 
@@ -194,7 +199,8 @@
             "Đăng ký thành công tài khoản intern@chilotus.com / 123456. Hãy bấm đăng nhập!",
           );
         } catch (error) {
-          enterDemoMode();
+          errorMsg.classList.remove("hidden");
+          errorMsg.textContent = error.message || "Đăng ký thất bại.";
         }
       });
     </script>
