@@ -1,127 +1,154 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cài đặt tài khoản - ChiLotus</title>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cài đặt tài khoản - ChiLotus</title>
 
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              slate: {
+                50: "#faf8f2",
+                100: "#f1ede2",
+                200: "#ddd6c6",
+                300: "#c8bfa9",
+                400: "#988f77",
+                500: "#7a715c",
+                600: "#5f5847",
+                700: "#4a4437",
+                800: "#33302a",
+                900: "#22201b",
+              },
+              gray: { 100: "#efeadd", 200: "#ddd6c6" },
+              blue: {
+                50: "#e9f2ec",
+                200: "#bcd8c6",
+                400: "#4a8a68",
+                500: "#2f7050",
+                600: "#24593f",
+                700: "#1d4934",
+              },
+              emerald: {
+                50: "#ecf3ea",
+                200: "#cadfce",
+                500: "#2f7050",
+                600: "#24593f",
+              },
+              rose: {
+                50: "#f9ebe6",
+                100: "#f3dcd4",
+                200: "#f0cdc2",
+                400: "#cf6b52",
+                500: "#bc5539",
+                600: "#a34428",
+              },
+              amber: {
+                50: "#faf1dc",
+                200: "#ecdcae",
+                400: "#d99e33",
+                500: "#c4871f",
+                600: "#a57218",
+              },
+              purple: { 50: "#efeaf6", 600: "#6d5a8e" },
+            },
+          },
+        },
+      };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
+    <!-- style.css: style nền chung. components.css: các class dùng chung (card, btn, nav-link...) -->
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/components.css" />
+  </head>
+  <body
+    class="antialiased font-sans flex flex-col md:flex-row min-h-screen relative"
+  >
+    <!-- Nơi hiện thông báo (toast) góc phải màn hình -->
+    <div
+      id="toast-container"
+      class="fixed top-20 right-4 z-50 flex flex-col gap-2"
+    ></div>
 
-        extend: {
-          colors: {
-            slate: { 50:'#faf8f2', 100:'#f1ede2', 200:'#ddd6c6', 300:'#c8bfa9', 400:'#988f77', 500:'#7a715c', 600:'#5f5847', 700:'#4a4437', 800:'#33302a', 900:'#22201b' },
-            gray: { 100:'#efeadd', 200:'#ddd6c6' },
-            blue: { 50:'#e9f2ec', 200:'#bcd8c6', 400:'#4a8a68', 500:'#2f7050', 600:'#24593f', 700:'#1d4934' },
-            emerald: { 50:'#ecf3ea', 200:'#cadfce', 500:'#2f7050', 600:'#24593f' },
-            rose: { 50:'#f9ebe6', 100:'#f3dcd4', 200:'#f0cdc2', 400:'#cf6b52', 500:'#bc5539', 600:'#a34428' },
-            amber: { 50:'#faf1dc', 200:'#ecdcae', 400:'#d99e33', 500:'#c4871f', 600:'#a57218' },
-            purple: { 50:'#efeaf6', 600:'#6d5a8e' }
-          }
-        }
-      }
-    }
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Các khối layout dùng chung, được layout.js tải và chèn vào -->
+    <div id="layout-sidebar"></div>
+    <div id="layout-bottom-nav"></div>
 
-  <!-- style.css: style nền chung. components.css: các class dùng chung (card, btn, nav-link...) -->
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/components.css">
-</head>
-<body class="antialiased font-sans flex flex-col md:flex-row min-h-screen relative">
+    <div class="flex-1 md:ml-64 flex flex-col min-h-screen pb-16 md:pb-0">
+      <div id="layout-header"></div>
 
-  <!-- Nơi hiện thông báo (toast) góc phải màn hình -->
-  <div id="toast-container" class="fixed top-20 right-4 z-50 flex flex-col gap-2"></div>
-
-  <!-- Các khối layout dùng chung, được layout.js tải và chèn vào -->
-  <div id="layout-sidebar"></div>
-  <div id="layout-bottom-nav"></div>
-
-  <div class="flex-1 md:ml-64 flex flex-col min-h-screen pb-16 md:pb-0">
-    <div id="layout-header"></div>
-
-    <!-- ====== NỘI DUNG TRANG CÀI ĐẶT TÀI KHOẢN ====== -->
-    <main class="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full">
-
-      <div class="flex flex-col md:flex-row gap-8">
-        <!-- Menu phụ bên trái: chuyển giữa các tab cài đặt (main.js xử lý chuyển tab) -->
-        <div class="w-full md:w-64 shrink-0">
-          <nav id="settings-tabs" class="flex flex-col space-y-1">
-            <a href="#" data-tab="notifications" class="nav-link nav-link-active">
-              <i data-icon="bell" class="w-4 h-4"></i> Thông báo
-            </a>
-            <a href="#" data-tab="security" class="nav-link">
-              <i data-icon="shield-check" class="w-4 h-4"></i> Bảo mật
-            </a>
-            <a href="#" data-tab="appearance" class="nav-link">
-              <i data-icon="palette" class="w-4 h-4"></i> Giao diện
-            </a>
-          </nav>
-        </div>
-
-        <!-- ===== TAB 1: THÔNG BÁO (đang phát triển) ===== -->
-        <div data-panel="notifications" class="card flex-1 overflow-hidden">
-          <div class="px-6 py-5 border-b border-gray-100">
-            <h3 class="text-base font-semibold text-slate-900">Thông báo</h3>
-            <p class="text-sm text-slate-500">Cấu hình nhắc nhở chi tiêu.</p>
+      <!-- ====== NỘI DUNG TRANG CÀI ĐẶT TÀI KHOẢN ====== -->
+      <main class="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full">
+        <div class="flex flex-col md:flex-row gap-8">
+          <!-- Menu phụ bên trái: chuyển giữa các tab cài đặt (main.js xử lý chuyển tab) -->
+          <div class="w-full md:w-64 shrink-0">
+            <nav id="settings-tabs" class="flex flex-col space-y-1">
+              <a href="#" data-tab="security" class="nav-link nav-link-active">
+                <i data-icon="shield-check" class="w-4 h-4"></i> Bảo mật
+              </a>
+            </nav>
           </div>
-          <div class="p-10 text-center text-slate-500 text-sm">
-            <i data-icon="bell" class="w-8 h-8 mx-auto mb-3 text-slate-300"></i>
-            Chức năng thông báo đang được phát triển. Quay lại sau nhé!
-          </div>
-        </div>
 
-        <!-- ===== TAB 3: BẢO MẬT (đổi mật khẩu) ===== -->
-        <div data-panel="security" class="card flex-1 overflow-hidden hidden">
-          <div class="px-6 py-5 border-b border-gray-100">
-            <h3 class="text-base font-semibold text-slate-900">Bảo mật</h3>
-            <p class="text-sm text-slate-500">Thay đổi mật khẩu đăng nhập của bạn.</p>
-          </div>
-          <div class="p-6 space-y-5 max-w-md">
-            <div>
-              <label class="form-label">Mật khẩu hiện tại</label>
-              <input type="password" id="old-password" class="form-input" autocomplete="current-password" />
+          <!-- ===== TAB 3: BẢO MẬT (đổi mật khẩu) ===== -->
+          <div data-panel="security" class="card flex-1 overflow-hidden">
+            <div class="px-6 py-5 border-b border-gray-100">
+              <h3 class="text-base font-semibold text-slate-900">Bảo mật</h3>
+              <p class="text-sm text-slate-500">
+                Thay đổi mật khẩu đăng nhập của bạn.
+              </p>
             </div>
-            <div>
-              <label class="form-label">Mật khẩu mới (tối thiểu 6 ký tự)</label>
-              <input type="password" id="new-password" class="form-input" autocomplete="new-password" />
-            </div>
-            <div>
-              <label class="form-label">Nhập lại mật khẩu mới</label>
-              <input type="password" id="confirm-password" class="form-input" autocomplete="new-password" />
-            </div>
-            <div class="flex justify-end pt-2">
-              <button id="change-password-btn" class="btn btn-primary">Đổi mật khẩu</button>
+            <div class="p-6 space-y-5 max-w-md">
+              <div>
+                <label class="form-label">Mật khẩu hiện tại</label>
+                <input
+                  type="password"
+                  id="old-password"
+                  class="form-input"
+                  autocomplete="current-password"
+                />
+              </div>
+              <div>
+                <label class="form-label"
+                  >Mật khẩu mới (tối thiểu 6 ký tự)</label
+                >
+                <input
+                  type="password"
+                  id="new-password"
+                  class="form-input"
+                  autocomplete="new-password"
+                />
+              </div>
+              <div>
+                <label class="form-label">Nhập lại mật khẩu mới</label>
+                <input
+                  type="password"
+                  id="confirm-password"
+                  class="form-input"
+                  autocomplete="new-password"
+                />
+              </div>
+              <div class="flex justify-end pt-2">
+                <button id="change-password-btn" class="btn btn-primary">
+                  Đổi mật khẩu
+                </button>
+              </div>
             </div>
           </div>
         </div>
+      </main>
+    </div>
 
-        <!-- ===== TAB 4: GIAO DIỆN (đang phát triển) ===== -->
-        <div data-panel="appearance" class="card flex-1 overflow-hidden hidden">
-          <div class="px-6 py-5 border-b border-gray-100">
-            <h3 class="text-base font-semibold text-slate-900">Giao diện</h3>
-            <p class="text-sm text-slate-500">Sáng / tối và màu nhấn.</p>
-          </div>
-          <div class="p-10 text-center text-slate-500 text-sm">
-            <i data-icon="palette" class="w-8 h-8 mx-auto mb-3 text-slate-300"></i>
-            Chức năng tuỳ biến giao diện đang được phát triển.
-          </div>
-        </div>
-      </div>
+    <div id="layout-modal"></div>
+    <div id="layout-chatbot"></div>
 
-    </main>
-  </div>
-
-  <div id="layout-modal"></div>
-  <div id="layout-chatbot"></div>
-
-  <script src="js/api.js"></script>
-  <script src="js/ai.js"></script>
-  <script src="js/icons.js"></script>
-  <script src="js/layout.js"></script>
-  <script src="js/main.js"></script>
-</body>
+    <script src="js/api.js"></script>
+    <script src="js/ai.js"></script>
+    <script src="js/icons.js"></script>
+    <script src="js/layout.js"></script>
+    <script src="js/main.js"></script>
+  </body>
 </html>

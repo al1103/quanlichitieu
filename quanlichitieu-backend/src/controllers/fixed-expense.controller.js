@@ -14,11 +14,15 @@ exports.getFixedExpenses = async (req, res, next) => {
 
 exports.createFixedExpense = async (req, res, next) => {
   try {
-    const { amount, category, description } = req.body;
+    const { amount, category, description, deductDay } = req.body;
     const parsedAmount = parseFloat(amount);
+    const parsedDeductDay = parseInt(deductDay) || 1;
 
     if (!category || !Number.isFinite(parsedAmount) || parsedAmount <= 0) {
       return res.status(400).json({ message: 'Vui lòng nhập số tiền hợp lệ (lớn hơn 0) và danh mục.' });
+    }
+    if (parsedDeductDay < 1 || parsedDeductDay > 31) {
+      return res.status(400).json({ message: 'Ngày trừ tiền phải từ 1 đến 31.' });
     }
 
     const fixedExpense = await prisma.fixedExpense.create({
@@ -26,7 +30,8 @@ exports.createFixedExpense = async (req, res, next) => {
         userId: req.user.id,
         amount: parsedAmount,
         category,
-        description
+        description,
+        deductDay: parsedDeductDay
       }
     });
 
@@ -39,7 +44,7 @@ exports.createFixedExpense = async (req, res, next) => {
 exports.updateFixedExpense = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { amount, category, description } = req.body;
+    const { amount, category, description, deductDay } = req.body;
 
     const existing = await prisma.fixedExpense.findFirst({
       where: { id, userId: req.user.id }
@@ -56,13 +61,22 @@ exports.updateFixedExpense = async (req, res, next) => {
         return res.status(400).json({ message: 'Số tiền phải là số lớn hơn 0.' });
       }
     }
+    
+    let parsedDeductDay;
+    if (deductDay !== undefined) {
+      parsedDeductDay = parseInt(deductDay);
+      if (parsedDeductDay < 1 || parsedDeductDay > 31) {
+        return res.status(400).json({ message: 'Ngày trừ tiền phải từ 1 đến 31.' });
+      }
+    }
 
     const updated = await prisma.fixedExpense.update({
       where: { id },
       data: {
         amount: parsedAmount,
         category: category !== undefined ? category : undefined,
-        description: description !== undefined ? description : undefined
+        description: description !== undefined ? description : undefined,
+        deductDay: parsedDeductDay !== undefined ? parsedDeductDay : undefined
       }
     });
 

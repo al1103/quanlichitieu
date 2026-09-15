@@ -158,6 +158,20 @@ async function apiDeleteFixedExpense(id) {
   return apiFetch(`/api/fixed-expenses/${id}`, { method: 'DELETE' });
 }
 
+// --- THÔNG BÁO (notifications) ---
+
+async function apiGetNotifications() {
+  return apiFetch('/api/notifications');
+}
+
+async function apiMarkNotificationRead(id) {
+  return apiFetch(`/api/notifications/${id}/read`, { method: 'PUT' });
+}
+
+async function apiMarkAllNotificationsRead() {
+  return apiFetch('/api/notifications/read-all', { method: 'PUT' });
+}
+
 // --- MỤC TIÊU TIẾT KIỆM (savings.html) ---
 
 // Mỗi phần tử: { id, name, targetAmount, currentAmount, deadline, monthlyContribution, status, percentComplete }
