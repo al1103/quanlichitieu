@@ -5,7 +5,7 @@ services:
   # $transaction (nạp ví, xác nhận thanh toán...). Không cần
   # tài khoản/mật khẩu cho môi trường dev cho gọn nhẹ.
   mongo:
-    image: bitnami/mongodb:7.0
+    image: soldevelo/mongodb:7.0
     container_name: moneytrack_mongo
     environment:
       MONGODB_REPLICA_SET_MODE: primary
